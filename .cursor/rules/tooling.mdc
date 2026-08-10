@@ -1,0 +1,74 @@
+---
+description: ESLint, Prettier, Swagger, global API prefix, logging, and CI conventions
+globs: .eslintrc*,*.prettierrc*,src/main.ts,src/app.module.ts,.github/**/*.yml
+alwaysApply: false
+---
+
+# Tooling & Global Config
+
+## API
+
+- Global prefix: `/api` — no versioning.
+- Swagger mounted at `/api/docs`.
+- Every endpoint must have Swagger decorators (`@ApiOperation`, `@ApiBody`, `@ApiResponse` variants). No exceptions.
+- Logging: NestJS native `Logger` from `@nestjs/common`. No external logging libraries for now.
+
+## ESLint
+
+Base: `@typescript-eslint/recommended-type-checked`.
+
+Required rules:
+
+```json
+{
+  "@typescript-eslint/no-explicit-any": "error",
+  "@typescript-eslint/explicit-function-return-type": "error",
+  "@typescript-eslint/consistent-type-imports": "error",
+  "@typescript-eslint/no-unused-vars": "error",
+  "@typescript-eslint/naming-convention": [
+    "error",
+    { "selector": "variable",      "format": ["camelCase"] },
+    { "selector": "function",      "format": ["camelCase"] },
+    { "selector": "parameter",     "format": ["camelCase"] },
+    { "selector": "classProperty", "format": ["camelCase"] },
+    { "selector": "method",        "format": ["camelCase"] },
+    { "selector": "class",         "format": ["PascalCase"] },
+    { "selector": "interface",     "format": ["PascalCase"], "prefix": ["I"] },
+    { "selector": "typeAlias",     "format": ["PascalCase"], "prefix": ["T"] }
+  ]
+}
+```
+
+## Prettier
+
+Runs as a **separate script**, not as an ESLint rule (keeps linting fast).
+
+```json
+{
+  "singleQuote": true,
+  "trailingComma": "all",
+  "printWidth": 100,
+  "semi": true
+}
+```
+
+```json
+"scripts": {
+  "lint":   "eslint \"{src,apps,libs,test}/**/*.ts\"",
+  "format": "prettier --write \"{src,apps,libs,test}/**/*.ts\""
+}
+```
+
+## CI (GitHub Actions)
+
+Runs on every Pull Request and every push to `main`.
+Pipeline: **lint → test → test:e2e** (in that order).
+
+## Git conventions
+
+| | Convention | Example |
+|---|---|---|
+| Branch | `feat/<feature-name>` | `feat/auth-refresh-token` |
+| Commit | `feat: <description>` | `feat: add refresh token whitelist` |
+
+Use descriptive commit messages and confirm with the user before committing.

@@ -1,0 +1,74 @@
+---
+description: JWT + refresh token authentication conventions
+globs: src/modules/auth/**/*.ts
+alwaysApply: false
+---
+
+# Authentication — JWT + Refresh Tokens
+
+## Stack
+
+- `@nestjs/passport` + `passport-jwt` strategy.
+- Access token + refresh token flow.
+
+## Token rules
+
+| Token | TTL | Storage |
+|---|---|---|
+| Access token | 15 minutes max | Authorization header (Bearer) |
+| Refresh token | 7 days | `httpOnly` + `sameSite` cookie |
+
+## Refresh token whitelist
+
+- Stored in the database with: **hash** of the token, expiration date, and device identifier.
+- **One entry per login**, not per user.
+- On logout: delete the entry from the whitelist.
+- A scheduled **CRON job** must clean up expired tokens periodically.
+- The refresh endpoint must verify the refresh token against the whitelist to generate the new access token.
+
+## Required pieces
+
+| Piece | Location | Responsibility |
+|---|---|---|
+| JWT Strategy | `modules/auth/infrastructure/passport/jwt.strategy.ts` | Validates the access token; returns the user payload used by `@CurrentUser()`. |
+| Auth Guard | `modules/auth/infrastructure/guards/jwt-auth.guard.ts` | Protects routes. |
+| `@CurrentUser()` decorator | `modules/auth/infrastructure/decorators/current-user.decorator.ts` | Extracts the authenticated user from `req.user` (populated by the strategy's `validate`). |
+| Refresh endpoint | `POST /api/auth/refresh` | Receives the refresh token (from cookie), validates against the whitelist, issues a new access token. |
+| Logout endpoint | `POST /api/auth/logout` | Deletes the refresh token entry from the whitelist and clears the cookie. |
+| CRON cleaner | `modules/auth/application/jobs/refresh-token-cleanup.job.ts` | Removes expired rows from the whitelist table. |
+
+## Cookie setup (refresh token)
+
+```typescript
+res.cookie('refresh_token', token, {
+  httpOnly: true,
+  sameSite: 'strict',
+  secure: true,           // always true in production
+  maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days in ms
+});
+```
+
+## Whitelist entity (reference)
+
+```typescript
+@Entity('refresh_tokens')
+export class RefreshTokenTypeOrmEntity {
+  @PrimaryColumn('uuid')
+  id: string;
+
+  @Column({ type: 'varchar', length: 255 })
+  tokenHash: string;       // bcrypt hash of the raw token
+
+  @Column({ type: 'varchar', length: 255 })
+  deviceId: string;        // fingerprint or user-agent hash
+
+  @Column()
+  userId: string;
+
+  @Column()
+  expiresAt: Date;
+
+  @CreateDateColumn()
+  createdAt: Date;
+}
+```

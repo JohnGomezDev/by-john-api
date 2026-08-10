@@ -1,0 +1,91 @@
+---
+description: Unified HTTP response shape, error handling filter, and exception rules
+globs: src/**/*.ts
+alwaysApply: true
+---
+
+# HTTP Responses & Error Handling
+
+## Success response wrapper
+
+Every endpoint returns `ApiResponseDto<T>` (located at `src/common/dto/response/api-response.dto.ts`).
+Controllers build it via the static factory — never construct it inline:
+
+```typescript
+// common/dto/response/api-response.dto.ts
+export class ApiResponseDto<T> {
+  data: T;
+  status: 'ok';
+  message: string;
+
+  static ok<T>(data: T, message = 'Operación exitosa'): ApiResponseDto<T> {
+    const response = new ApiResponseDto<T>();
+    response.data = data;
+    response.status = 'ok';
+    response.message = message;
+    return response;
+  }
+}
+```
+
+## Error response shape
+
+All errors are handled by a **global exception filter** (`src/common/filters/all-exceptions.filter.ts`).
+Registered once in `main.ts` — `app.useGlobalFilters(new AllExceptionsFilter())`.
+Always returns:
+
+```json
+{
+  "statusCode": 404,
+  "message": "Post con slug new-post no encontrado",
+  "error": "Not Found"
+}
+```
+
+### Filter mapping logic
+
+| Input | Output |
+|---|---|
+| `HttpException` | Use its `status` and `message` as-is |
+| `QueryFailedError` with code `ER_DUP_ENTRY` | `409 Conflict` |
+| `EntityNotFoundError` (TypeORM) | `404 Not Found` |
+| Any other error | `500 Internal Server Error` (generic client message; full stack logged with NestJS `Logger`) |
+
+## Exception table — what to throw and where
+
+| Situation | Exception | HTTP status |
+|---|---|---|
+| Resource not found | `NotFoundException` | 404 |
+| Duplicate resource (unique constraint) | `ConflictException` | 409 |
+| Invalid body beyond class-validator | `BadRequestException` | 400 |
+| Not authenticated | `UnauthorizedException` | 401 |
+| Authenticated but forbidden | `ForbiddenException` | 403 |
+
+**Rules:**
+- Only **use cases** throw exceptions — never controllers.
+- Never return `null` / `undefined` silently and let the controller decide.
+- The global filter is the safety net, not the primary mechanism.
+
+## Mandatory try/catch in use cases
+
+Every use-case method that touches I/O (queries, transactions, external calls) must wrap its body in `try/catch`:
+
+```typescript
+async execute(dto: CreatePostDto): Promise<Post> {
+  try {
+    // ...
+  } catch (error) {
+    if (
+      error instanceof QueryFailedError &&
+      (error as any).code === 'ER_DUP_ENTRY'
+    ) {
+      throw new ConflictException('El post con el slug new-post ya existe');
+    }
+    throw error; // re-throw everything else, never swallow
+  }
+}
+```
+
+1. Map low-level errors (e.g. `QueryFailedError`) to the appropriate HTTP exception and re-throw.
+2. If it's already a known domain exception, re-throw as-is.
+3. **Never swallow errors** (empty catch, or catch that returns `null`).

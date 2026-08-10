@@ -1,0 +1,258 @@
+---
+description: Layer-by-layer implementation patterns with code examples
+globs: src/modules/**/*.ts
+alwaysApply: false
+---
+
+# Architecture — Implementation Patterns
+
+## Domain entity
+
+Pure class, **no ORM decorators**. Owns factory methods, state transitions with rules, invariant-preserving updates, and computed properties.
+
+```typescript
+// domain/entities/post.entity.ts
+export class Post {
+  constructor(
+    readonly id: string,
+    readonly title: string,
+    readonly content: string,
+    readonly slug: string,
+    readonly published: boolean,
+    readonly createdAt: Date,
+    readonly updatedAt: Date,
+  ) {}
+
+  static create(props: { title: string; content: string; slug: string }): Post {
+    // ...
+  }
+
+  publish(): Post {
+    if (!this.title || !this.content) {
+      throw new Error('No se puede publicar un post incompleto');
+    }
+    return new Post(this.id, this.title, this.content, this.slug, true, this.createdAt, new Date());
+  }
+
+  updateTitle(newTitle: string): Post {
+    if (this.published) {
+      throw new Error('No se puede editar el título de un post publicado');
+    }
+    return new Post(this.id, newTitle, this.content, this.slug, this.published, this.createdAt, this.updatedAt);
+  }
+
+  get excerpt(): string {
+    return this.content.substring(0, 160).concat('...');
+  }
+}
+```
+
+## Repository interface
+
+Only declares which methods exist. Exports the injection token.
+
+```typescript
+// domain/repositories/post.repository.interface.ts
+export const POST_REPOSITORY = 'POST_REPOSITORY';
+
+export interface IPostRepository {
+  save(post: Post): Promise<Post>;
+  findAll(): Promise<Post[]>;
+  findById(id: string): Promise<Post | null>;
+  findBySlug(slug: string): Promise<Post | null>;
+  delete(id: string): Promise<void>;
+}
+```
+
+## Use case
+
+All business logic lives here. Injects the repository by token.
+
+```typescript
+// application/use-cases/create-post/create-post.use-case.ts
+@Injectable()
+export class CreatePostUseCase {
+  constructor(
+    @Inject(POST_REPOSITORY)
+    private readonly postRepository: IPostRepository,
+  ) {}
+
+  async execute(dto: CreatePostDto): Promise<Post> {
+    try {
+      const slug = dto.slug ?? this.generateSlug(dto.title);
+      const post = Post.create({ title: dto.title, content: dto.content, slug });
+      return await this.postRepository.save(post);
+    } catch (error) {
+      if (error instanceof QueryFailedError && (error as any).code === 'ER_DUP_ENTRY') {
+        throw new ConflictException(`El post con el slug ${dto.slug} ya existe`);
+      }
+      throw error;
+    }
+  }
+
+  private generateSlug(title: string): string {
+    return title.toLowerCase().replace(/\s+/g, '-');
+  }
+}
+```
+
+## TypeORM entity
+
+Only talks to TypeORM. Never imported by the domain. Always specify type and length for columns.
+
+```typescript
+// infrastructure/persistence/typeorm/post.typeorm-entity.ts
+@Entity('posts')
+export class PostTypeOrmEntity {
+  @PrimaryColumn('uuid')
+  id: string;
+
+  @Column({ type: 'varchar', length: 255 })
+  title: string;
+
+  @Column({ type: 'text' })
+  content: string;
+
+  @Column({ type: 'varchar', length: 255, unique: true })
+  slug: string;
+
+  @Column({ type: 'boolean', default: false })
+  published: boolean;
+
+  @CreateDateColumn()
+  createdAt: Date;
+
+  @UpdateDateColumn()
+  updatedAt: Date;
+}
+```
+
+## Repository implementation
+
+Contains the `toOrm` / `toDomain` mappers. This is the only place that knows both worlds.
+
+```typescript
+// infrastructure/persistence/post.repository.impl.ts
+@Injectable()
+export class PostRepositoryImpl implements IPostRepository {
+  constructor(
+    @InjectRepository(PostTypeOrmEntity)
+    private readonly ormRepo: Repository<PostTypeOrmEntity>,
+  ) {}
+
+  async save(post: Post): Promise<Post> {
+    const saved = await this.ormRepo.save(this.toOrm(post));
+    return this.toDomain(saved);
+  }
+
+  async findById(id: string): Promise<Post | null> {
+    const entity = await this.ormRepo.findOneBy({ id });
+    return entity ? this.toDomain(entity) : null;
+  }
+
+  // ... other methods
+
+  private toOrm(post: Post): PostTypeOrmEntity {
+    const e = new PostTypeOrmEntity();
+    e.id = post.id;
+    e.title = post.title;
+    e.content = post.content;
+    e.slug = post.slug;
+    e.published = post.published;
+    e.createdAt = post.createdAt;
+    e.updatedAt = post.updatedAt;
+    return e;
+  }
+
+  private toDomain(e: PostTypeOrmEntity): Post {
+    return new Post(e.id, e.title, e.content, e.slug, e.published, e.createdAt, e.updatedAt);
+  }
+}
+```
+
+## DTOs
+
+### Request DTO — validates input, documented with Swagger
+
+```typescript
+// infrastructure/http/dtos/request/create-post.request.dto.ts
+export class CreatePostRequestDto {
+  @ApiProperty({ description: 'Título del post', example: 'Mi primer post', maxLength: 255 })
+  @IsString()
+  @IsNotEmpty()
+  @MaxLength(255)
+  title: string;
+
+  @ApiProperty({ description: 'Contenido del post', example: 'Contenido del post' })
+  @IsString()
+  @IsNotEmpty()
+  content: string;
+
+  @ApiPropertyOptional({ description: 'Slug del post', example: 'mi-primer-post' })
+  @IsString()
+  @IsOptional()
+  slug?: string;
+}
+```
+
+### Response DTO — shapes output, static `fromDomain` factory
+
+```typescript
+// infrastructure/http/dtos/response/post.response.dto.ts
+export class PostResponseDto {
+  @ApiProperty({ description: 'ID del post', example: 'uuid-...' })
+  id: string;
+
+  @ApiProperty({ description: 'Título del post', example: 'Mi primer post' })
+  title: string;
+
+  static fromDomain(post: Post): PostResponseDto {
+    const dto = new PostResponseDto();
+    dto.id = post.id;
+    dto.title = post.title;
+    return dto;
+  }
+}
+```
+
+## Controller
+
+HTTP only — calls the use case, wraps the result in `ApiResponseDto`. Zero logic.
+Every endpoint must be documented with Swagger decorators.
+
+```typescript
+// infrastructure/http/blog.controller.ts
+@ApiTags('Blog')
+@Controller('blog')
+export class BlogController {
+  constructor(private readonly createPostUseCase: CreatePostUseCase) {}
+
+  @ApiOperation({ summary: 'Crear un nuevo post', description: 'Crea un nuevo post en el blog' })
+  @ApiBody({ type: CreatePostRequestDto })
+  @ApiCreatedResponse({ description: 'Post creado exitosamente', type: PostResponseDto })
+  @ApiBadRequestResponse({ description: 'Datos inválidos' })
+  @ApiConflictResponse({ description: 'El slug ya existe' })
+  @Post('posts')
+  async create(@Body() dto: CreatePostRequestDto): Promise<ApiResponseDto<PostResponseDto>> {
+    const post = await this.createPostUseCase.execute(dto);
+    return ApiResponseDto.ok(PostResponseDto.fromDomain(post), 'Post creado exitosamente');
+  }
+}
+```
+
+## Module
+
+Binds the repository token to its implementation. Swap `useClass` for `useValue` with a mock in tests.
+
+```typescript
+// blog.module.ts
+@Module({
+  imports: [TypeOrmModule.forFeature([PostTypeOrmEntity])],
+  controllers: [BlogController],
+  providers: [
+    { provide: POST_REPOSITORY, useClass: PostRepositoryImpl },
+    CreatePostUseCase,
+  ],
+})
+export class BlogModule {}
+```

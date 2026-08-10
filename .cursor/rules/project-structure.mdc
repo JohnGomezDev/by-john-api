@@ -1,0 +1,63 @@
+---
+description: Folder structure and layer responsibilities for every module
+globs: src/**/*.ts
+alwaysApply: true
+---
+
+# Project Structure
+
+## Stack
+
+- Node.js v24.19.0 + pnpm
+- NestJS v11 + TypeScript + TypeORM (PostgreSQL) + Swagger (OpenAPI 3.0)
+- JWT + Passport
+- Jest
+
+## Module layout
+
+```
+src/
+  modules/
+    <module-name>/
+      domain/
+        entities/
+          <entity-name>.entity.ts
+        repositories/
+          <repository-name>.repository.interface.ts
+
+      application/
+        use-cases/
+          <use-case-name>/
+            <use-case-name>.use-case.ts
+
+      infrastructure/
+        persistence/
+          typeorm/
+            <entity-name>.typeorm-entity.ts
+          <repository-name>.repository.impl.ts
+        http/
+          dtos/
+            request/
+              <dto-name>.request.dto.ts
+              <dto-name>.dto.ts        # sub-item / nested interface
+            response/
+              <dto-name>.response.dto.ts
+              <dto-name>.dto.ts        # sub-item / nested interface
+          <module-name>.controller.ts
+
+      <module-name>.module.ts
+```
+
+## Layer responsibilities
+
+| Layer | File | Responsibility |
+|---|---|---|
+| Domain entity | `domain/entities/*.entity.ts` | Pure class, no ORM decorators. Factory methods, state transitions, invariants, computed properties. |
+| Repository interface | `domain/repositories/*.repository.interface.ts` | Defines the contract only. Exports the injection token constant. |
+| Use case | `application/use-cases/**/*.use-case.ts` | All business logic. Decorated with `@Injectable()`. Injects the repository by token. |
+| TypeORM entity | `infrastructure/persistence/typeorm/*.typeorm-entity.ts` | ORM decorators, table structure. Never imported by the domain. |
+| Repository impl | `infrastructure/persistence/*.repository.impl.ts` | Implements the interface. Contains `toOrm` / `toDomain` mappers. |
+| Request DTO | `infrastructure/http/dtos/request/*.request.dto.ts` | Validates input with class-validator. Fully documented with Swagger. |
+| Response DTO | `infrastructure/http/dtos/response/*.response.dto.ts` | Shapes the output. Exposes a static `fromDomain` factory. Fully documented with Swagger. |
+| Controller | `infrastructure/http/*.controller.ts` | HTTP only — calls the use case, returns `ApiResponseDto`. No logic. |
+| Module | `<module-name>.module.ts` | Wires the DI graph: binds the token to the impl, registers use cases and the controller. |

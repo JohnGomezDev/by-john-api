@@ -1,0 +1,93 @@
+---
+description: Testing conventions with Jest for unit and e2e tests
+globs: src/**/*.spec.ts,src/**/*.e2e-spec.ts,test/**/*.ts
+alwaysApply: false
+---
+
+# Testing
+
+## Rules
+
+- Framework: **Jest** for both unit tests and e2e tests.
+- **No minimum coverage is enforced.**
+- **Never create tests automatically or proactively.** Only write tests when the user explicitly requests them, specifying which use case or endpoint to test.
+
+## Unit tests — use cases
+
+- Test the use case in isolation; mock the repository using the injection token.
+- Pattern: `useClass` → `useValue` with a jest mock object in the test module.
+
+```typescript
+// application/use-cases/create-post/create-post.use-case.spec.ts
+describe('CreatePostUseCase', () => {
+  let useCase: CreatePostUseCase;
+  let postRepository: jest.Mocked<IPostRepository>;
+
+  beforeEach(async () => {
+    const module = await Test.createTestingModule({
+      providers: [
+        CreatePostUseCase,
+        {
+          provide: POST_REPOSITORY,
+          useValue: {
+            save: jest.fn(),
+            findBySlug: jest.fn(),
+          } satisfies Partial<IPostRepository>,
+        },
+      ],
+    }).compile();
+
+    useCase = module.get(CreatePostUseCase);
+    postRepository = module.get(POST_REPOSITORY);
+  });
+
+  it('should create and return a post', async () => {
+    const post = Post.create({ title: 'Hello', content: 'World', slug: 'hello' });
+    postRepository.save.mockResolvedValue(post);
+
+    const result = await useCase.execute({ title: 'Hello', content: 'World' });
+
+    expect(postRepository.save).toHaveBeenCalledTimes(1);
+    expect(result.title).toBe('Hello');
+  });
+});
+```
+
+## e2e tests
+
+- Use `supertest` against the full NestJS app.
+- Spin up the app in `beforeAll`, close it in `afterAll`.
+- Use a dedicated test database; never touch production or development data.
+
+```typescript
+// test/blog.e2e-spec.ts
+describe('Blog (e2e)', () => {
+  let app: INestApplication;
+
+  beforeAll(async () => {
+    const module = await Test.createTestingModule({ imports: [AppModule] }).compile();
+    app = module.createNestApplication();
+    await app.init();
+  });
+
+  afterAll(async () => {
+    await app.close();
+  });
+
+  it('POST /api/blog/posts → 201', () => {
+    return request(app.getHttpServer())
+      .post('/api/blog/posts')
+      .send({ title: 'Hello', content: 'World' })
+      .expect(201);
+  });
+});
+```
+
+## npm scripts (reference)
+
+```json
+"scripts": {
+  "test":     "jest",
+  "test:e2e": "jest --config ./test/jest-e2e.json"
+}
+```

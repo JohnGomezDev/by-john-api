@@ -1,0 +1,90 @@
+---
+description: DataSource setup, migrations, and seeders conventions
+globs: src/database/**/*.ts
+alwaysApply: false
+---
+
+# Database — Migrations & Seeders
+
+## DataSource
+
+Lives in `src/database/datasource.ts`. Used by both NestJS (`TypeOrmModule.forRoot`) and the CLI scripts.
+
+```typescript
+// src/database/datasource.ts
+import { DataSource, DataSourceOptions } from 'typeorm';
+import { join } from 'path';
+import { config } from 'dotenv';
+import { ConfigService } from '@nestjs/config';
+
+config();
+const configService = new ConfigService();
+
+export const dataSourceOptions: DataSourceOptions = {
+  type: 'postgres',
+  host: configService.getOrThrow('DB_HOST'),
+  port: configService.getOrThrow('DB_PORT'),
+  username: configService.getOrThrow('DB_USER'),
+  password: configService.getOrThrow('DB_PASSWORD'),
+  database: configService.getOrThrow('DB_NAME'),
+  entities: ['**/*.typeorm-entity{.ts,.js}'],
+  migrations: [join(__dirname, 'migrations/**/*{.js,.ts}')],
+  migrationsTableName: 'migrations',
+  synchronize: false,   // NEVER set to true
+  migrationsRun: false, // NEVER auto-run on startup
+  logging: false,
+};
+
+const dataSource = new DataSource(dataSourceOptions);
+export default dataSource;
+```
+
+**In `AppModule`:**
+```typescript
+TypeOrmModule.forRoot(dataSourceOptions)
+```
+
+## Migration scripts (`package.json`)
+
+```json
+"scripts": {
+  "migration:generate": "npx typeorm-ts-node-commonjs migration:generate -d src/database/datasource.ts",
+  "migration:run":      "npx typeorm-ts-node-commonjs migration:run      -d src/database/datasource.ts",
+  "migration:revert":   "npx typeorm-ts-node-commonjs migration:revert   -d src/database/datasource.ts",
+  "migration:show":     "npx typeorm-ts-node-commonjs migration:show     -d src/database/datasource.ts"
+}
+```
+
+- **`migration:generate`** diffs entities vs. the current DB state and produces the migration file.  
+  Always pass the target path: `pnpm migration:generate src/database/migrations/<migration-name>`.
+- Migrations live in `src/database/migrations/`.
+- **Never run migrations automatically** — always manually via the scripts above.
+
+## Seeders
+
+Using `typeorm-extension`. Files live in `src/database/seeds/`.
+
+```typescript
+// src/database/seeds/category.seeder.ts
+import { DataSource } from 'typeorm';
+import { Seeder } from 'typeorm-extension';
+import { CategoryTypeOrmEntity } from '../../modules/category/infrastructure/persistence/typeorm/category.typeorm-entity';
+
+export class CategorySeeder implements Seeder {
+  public async run(dataSource: DataSource): Promise<void> {
+    const repository = dataSource.getRepository(CategoryTypeOrmEntity);
+    await repository.insert([
+      { name: 'Backend' },
+      // ...
+    ]);
+  }
+}
+```
+
+```json
+"scripts": {
+  "seed:run": "typeorm-extension seed:run -d src/database/datasource.ts"
+}
+```
+
+**Never run seeders automatically** — always ask the user before executing them.

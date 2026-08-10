@@ -1,0 +1,17 @@
+---
+description: Naming conventions for all files, variables, classes, and database columns
+globs: **/*.ts
+alwaysApply: true
+---
+
+# Naming Conventions
+
+- **Language**: always English in code. Spanish is allowed only in response messages and error text shown to the end user.
+- **Variables, methods, functions, parameters**: camelCase.
+- **Classes** (entities, use cases, controllers, DTOs): PascalCase, no prefix.
+- **Interfaces**: PascalCase with prefix `I` (e.g. `IPostRepository`).
+- **Type aliases**: PascalCase with prefix `T` (e.g. `TPostStatus`).
+- **Modules (folders)**: kebab-case.
+- **Table names**: snake_case.
+- **Column names**: snake_case, mapped from the camelCase property (e.g. `lastName` → `last_name`).
+- **Files**: kebab-case.
