@@ -159,7 +159,7 @@ export class CategorySeeder implements Seeder {
 
 > PK is `(post_id, tag_id)`. No `created_at` / `updated_at` — pure relation, rows are only inserted or deleted.
 
-#### `spotify_track`
+#### `spotify_tracks`
 | Column | Type | Constraints |
 |---|---|---|
 | id | SERIAL | PK |
@@ -174,7 +174,6 @@ export class CategorySeeder implements Seeder {
 | duration_ms | INT | NOT NULL |
 | created_at | TIMESTAMP | |
 | updated_at | TIMESTAMP | |
-| updated_by | UUID | FK → admin.id |
 
 ---
 
@@ -183,7 +182,6 @@ export class CategorySeeder implements Seeder {
 ```
 admin ──< post         (one admin owns many posts)
 admin ──< refresh_token
-admin ─── spotify_track (updated_by — last editor)
 category ──< post
 post >──< tag          (many-to-many via post_tag)
 ```
@@ -194,30 +192,30 @@ post >──< tag          (many-to-many via post_tag)
 
 ```sql
 -- Post slug lookup (primary blog endpoint)
-CREATE UNIQUE INDEX idx_post_slug ON post(slug);
+CREATE UNIQUE INDEX idx_post_slug ON posts(slug);
 
 -- Filter posts by category
-CREATE INDEX idx_post_category ON post(category_id);
+CREATE INDEX idx_post_category ON posts(category_id);
 
 -- Filter posts by tag (post_id side is covered by the composite PK)
 CREATE INDEX idx_post_tag_tag_id ON post_tag(tag_id);
 
 -- CRON cleanup of expired refresh tokens
-CREATE INDEX idx_refresh_token_expires_at ON refresh_token(expires_at);
+CREATE INDEX idx_refresh_token_expires_at ON admin_refresh_tokens(expires_at);
 
 -- Refresh token whitelist lookup
-CREATE INDEX idx_refresh_token_hash ON refresh_token(token_hash);
+CREATE INDEX idx_refresh_token_hash ON admin_refresh_tokens(token_hash);
 
 -- Full-text search on title + content (PostgreSQL native)
-CREATE INDEX idx_post_search ON post USING GIN(search_vector);
+CREATE INDEX idx_post_search ON posts USING GIN(search_vector);
 ```
 
 #### Indexes intentionally omitted
 | Field | Reason |
 |---|---|
-| `post.published` | Row count is tiny; seq scan is faster |
-| `post.admin_id` | Only 1–2 admins; filter adds no value |
-| `category.slug` | Covered by the UNIQUE constraint |
+| `posts.published` | Row count is tiny; seq scan is faster |
+| `posts.admin_id` | Only 1–2 admins; filter adds no value |
+| `blog_categories.slug` | Covered by the UNIQUE constraint |
 | `tag.slug` | Covered by the UNIQUE constraint |
 
 #### Full-text search usage
