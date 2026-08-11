@@ -48,10 +48,10 @@ TypeOrmModule.forRoot(dataSourceOptions)
 
 ```json
 "scripts": {
-  "migration:generate": "npx typeorm-ts-node-commonjs migration:generate -d src/database/datasource.ts",
-  "migration:run":      "npx typeorm-ts-node-commonjs migration:run      -d src/database/datasource.ts",
-  "migration:revert":   "npx typeorm-ts-node-commonjs migration:revert   -d src/database/datasource.ts",
-  "migration:show":     "npx typeorm-ts-node-commonjs migration:show     -d src/database/datasource.ts"
+  "migration:generate": "pnpm exec typeorm-ts-node-commonjs migration:generate -d src/database/datasource.ts",
+  "migration:run":      "pnpm exec typeorm-ts-node-commonjs migration:run      -d src/database/datasource.ts",
+  "migration:revert":   "pnpm exec typeorm-ts-node-commonjs migration:revert   -d src/database/datasource.ts",
+  "migration:show":     "pnpm exec typeorm-ts-node-commonjs migration:show     -d src/database/datasource.ts"
 }
 ```
 
