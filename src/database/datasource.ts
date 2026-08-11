@@ -14,7 +14,7 @@ export const dataSourceOptions: DataSourceOptions = {
   username: configService.getOrThrow<string>('DB_USER'),
   password: configService.getOrThrow<string>('DB_PASSWORD'),
   database: configService.getOrThrow<string>('DB_NAME'),
-  entities: ['**/*.typeorm-entity{.ts,.js}'],
+  entities: [join(__dirname, '../modules/**/*.typeorm-entity{.ts,.js}')],
   migrations: [join(__dirname, 'migrations/**/*{.js,.ts}')],
   migrationsTableName: 'migrations',
   synchronize: false,
