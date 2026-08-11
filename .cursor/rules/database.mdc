@@ -88,3 +88,144 @@ export class CategorySeeder implements Seeder {
 ```
 
 **Never run seeders automatically** — always ask the user before executing them.
+
+---
+
+## Schema
+
+### Tables
+
+#### `admin_users`
+| Column | Type | Constraints |
+|---|---|---|
+| id | UUID | PK |
+| username | VARCHAR | UNIQUE NOT NULL |
+| email | VARCHAR | UNIQUE NOT NULL |
+| password_hash | VARCHAR | NOT NULL |
+| created_at | TIMESTAMP | |
+| updated_at | TIMESTAMP | |
+
+#### `admin_refresh_tokens`
+| Column | Type | Constraints |
+|---|---|---|
+| id | UUID | PK |
+| token_hash | VARCHAR | NOT NULL |
+| user_agent | VARCHAR | NOT NULL |
+| expires_at | TIMESTAMP | NOT NULL |
+| created_at | TIMESTAMP | |
+| admin_id | UUID | FK → admin.id |
+
+> No `updated_at` — immutable by design. Created on login, deleted on logout. Never updated.
+
+#### `blog_categories`
+| Column | Type | Constraints |
+|---|---|---|
+| id | UUID | PK |
+| name | VARCHAR | UNIQUE NOT NULL |
+| slug | VARCHAR | UNIQUE NOT NULL |
+| created_at | TIMESTAMP | |
+| updated_at | TIMESTAMP | |
+
+#### `post_tags`
+| Column | Type | Constraints |
+|---|---|---|
+| id | UUID | PK |
+| name | VARCHAR | UNIQUE NOT NULL |
+| slug | VARCHAR | UNIQUE NOT NULL |
+| created_at | TIMESTAMP | |
+| updated_at | TIMESTAMP | |
+
+#### `posts`
+| Column | Type | Constraints |
+|---|---|---|
+| id | UUID | PK |
+| title | VARCHAR | NOT NULL |
+| slug | VARCHAR | UNIQUE NOT NULL |
+| content | TEXT | NOT NULL — stored as markdown |
+| excerpt | VARCHAR | ~160 chars, generated on save |
+| search_vector | TSVECTOR | GENERATED ALWAYS AS `to_tsvector('spanish', title \|\| ' ' \|\| content)` STORED |
+| published | BOOLEAN | DEFAULT false |
+| published_at | TIMESTAMP | NULL when draft |
+| created_at | TIMESTAMP | |
+| updated_at | TIMESTAMP | |
+| admin_id | UUID | FK → admin.id |
+| category_id | UUID | FK → category.id |
+
+#### `post_tag` *(join table)*
+| Column | Type | Constraints |
+|---|---|---|
+| post_id | UUID | FK → post.id |
+| tag_id | UUID | FK → tag.id |
+
+> PK is `(post_id, tag_id)`. No `created_at` / `updated_at` — pure relation, rows are only inserted or deleted.
+
+#### `spotify_track`
+| Column | Type | Constraints |
+|---|---|---|
+| id | SERIAL | PK |
+| track_id | VARCHAR | NOT NULL — Spotify track ID |
+| track_name | VARCHAR | NOT NULL — `name` |
+| artists | JSONB | NOT NULL — `[{ id, name, spotifyUrl }]` |
+| album_id | VARCHAR | NOT NULL — `album.id` |
+| album_name | VARCHAR | NOT NULL — `album.name` |
+| album_cover_url | VARCHAR | NOT NULL — `album.images[0].url` |
+| spotify_url | VARCHAR | NOT NULL — `external_urls.spotify` |
+| preview_url | VARCHAR | NULLABLE — not always returned by the API |
+| duration_ms | INT | NOT NULL |
+| created_at | TIMESTAMP | |
+| updated_at | TIMESTAMP | |
+| updated_by | UUID | FK → admin.id |
+
+---
+
+### Relationships
+
+```
+admin ──< post         (one admin owns many posts)
+admin ──< refresh_token
+admin ─── spotify_track (updated_by — last editor)
+category ──< post
+post >──< tag          (many-to-many via post_tag)
+```
+
+---
+
+### Indexes
+
+```sql
+-- Post slug lookup (primary blog endpoint)
+CREATE UNIQUE INDEX idx_post_slug ON post(slug);
+
+-- Filter posts by category
+CREATE INDEX idx_post_category ON post(category_id);
+
+-- Filter posts by tag (post_id side is covered by the composite PK)
+CREATE INDEX idx_post_tag_tag_id ON post_tag(tag_id);
+
+-- CRON cleanup of expired refresh tokens
+CREATE INDEX idx_refresh_token_expires_at ON refresh_token(expires_at);
+
+-- Refresh token whitelist lookup
+CREATE INDEX idx_refresh_token_hash ON refresh_token(token_hash);
+
+-- Full-text search on title + content (PostgreSQL native)
+CREATE INDEX idx_post_search ON post USING GIN(search_vector);
+```
+
+#### Indexes intentionally omitted
+| Field | Reason |
+|---|---|
+| `post.published` | Row count is tiny; seq scan is faster |
+| `post.admin_id` | Only 1–2 admins; filter adds no value |
+| `category.slug` | Covered by the UNIQUE constraint |
+| `tag.slug` | Covered by the UNIQUE constraint |
+
+#### Full-text search usage
+```sql
+-- Search posts by keyword(s)
+WHERE search_vector @@ plainto_tsquery('spanish', 'palabra clave')
+
+-- Combined filter: category + keyword
+WHERE category_id = $1
+  AND search_vector @@ plainto_tsquery('spanish', $2)
+```
