@@ -40,6 +40,10 @@ export class Post {
   }
 
   publish(): Post {
+    if (this.published) {
+      throw new Error('El post ya está publicado');
+    }
+
     if (!this.title || !this.content) {
       throw new Error('No se puede publicar un post incompleto');
     }
@@ -61,6 +65,10 @@ export class Post {
   }
 
   unpublish(): Post {
+    if (!this.published) {
+      throw new Error('El post ya está en borrador');
+    }
+
     return new Post(
       this.id,
       this.title,

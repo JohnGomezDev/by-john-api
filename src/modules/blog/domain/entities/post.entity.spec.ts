@@ -96,6 +96,19 @@ describe('Post', () => {
     expect(published.id).toBe(draft.id);
   });
 
+  // publish should reject already published posts
+  it('should throw when publishing an already published post', () => {
+    const published = Post.create({
+      title: 'Hello',
+      slug: 'hello',
+      content: 'Content',
+      adminId,
+      categoryId,
+    }).publish();
+
+    expect(() => published.publish()).toThrow('El post ya está publicado');
+  });
+
   // publish should reject incomplete posts
   it('should throw when publishing an incomplete post', () => {
     const incomplete = new Post(
@@ -130,5 +143,18 @@ describe('Post', () => {
     expect(draft.published).toBe(false);
     expect(draft.publishedAt).toBeNull();
     expect(draft.id).toBe(published.id);
+  });
+
+  // unpublish should reject already draft posts
+  it('should throw when unpublishing an already draft post', () => {
+    const draft = Post.create({
+      title: 'Hello',
+      slug: 'hello',
+      content: 'Content',
+      adminId,
+      categoryId,
+    });
+
+    expect(() => draft.unpublish()).toThrow('El post ya está en borrador');
   });
 });
