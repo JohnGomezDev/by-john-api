@@ -12,10 +12,43 @@ alwaysApply: false
 - **No minimum coverage is enforced.**
 - **Never create tests automatically or proactively.** Only write tests when the user explicitly requests them, specifying which use case or endpoint to test.
 
-## Unit tests — use cases
+## Unit test structure (canonical)
 
-- Test the use case in isolation; mock the repository using the injection token.
-- Pattern: `useClass` → `useValue` with a jest mock object in the test module.
+All unit specs follow the same shape as `src/main.spec.ts`:
+
+1. **Mocks first** — `jest.mock(...)` / Nest `useValue` mocks at the top (before `describe`).
+2. **`describe('<unit>')`** — name matches the file/unit under test (`main`, `CreatePostUseCase`, …).
+3. **Typed deps** — declare `let` mocks/subjects at the top of `describe`.
+4. **`beforeEach`** — rebuild fresh mocks and wire return values every test.
+5. **One behavior per `it`** — short `should …` title; a one-line comment above describing the expectation.
+6. **Act → assert** — call the unit, then `expect(...).toHaveBeenCalledWith(...)` / value checks. No shared state across tests.
+
+```typescript
+// <unit>.spec.ts
+jest.mock('some-external', () => ({
+  SomeClient: { call: jest.fn() },
+}));
+
+describe('main', () => {
+  let mockApp: { listen: jest.Mock };
+
+  beforeEach(() => {
+    mockApp = { listen: jest.fn() };
+    (NestFactory.create as jest.Mock).mockResolvedValue(mockApp);
+  });
+
+  // App should listen on defined port
+  it('should listen on defined port', async () => {
+    await bootstrap();
+
+    expect(mockApp.listen).toHaveBeenCalledWith(process.env.PORT ?? 3000);
+  });
+});
+```
+
+### Use cases (Nest DI)
+
+Same structure; mock the repository via its injection token with `useValue`:
 
 ```typescript
 // application/use-cases/create-post/create-post.use-case.spec.ts
@@ -41,6 +74,7 @@ describe('CreatePostUseCase', () => {
     postRepository = module.get(POST_REPOSITORY);
   });
 
+  // Post should be created and returned
   it('should create and return a post', async () => {
     const post = Post.create({ title: 'Hello', content: 'World', slug: 'hello' });
     postRepository.save.mockResolvedValue(post);
@@ -55,25 +89,25 @@ describe('CreatePostUseCase', () => {
 
 ## e2e tests
 
-- Use `supertest` against the full NestJS app.
-- Spin up the app in `beforeAll`, close it in `afterAll`.
-- Use a dedicated test database; never touch production or development data.
+Same discipline: one behavior per `it`, comment above each case, fresh app in `beforeEach` / close in `afterEach`.
+Use `supertest` against the full NestJS app and a dedicated test database — never production or development data.
 
 ```typescript
 // test/blog.e2e-spec.ts
 describe('Blog (e2e)', () => {
   let app: INestApplication;
 
-  beforeAll(async () => {
+  beforeEach(async () => {
     const module = await Test.createTestingModule({ imports: [AppModule] }).compile();
     app = module.createNestApplication();
     await app.init();
   });
 
-  afterAll(async () => {
+  afterEach(async () => {
     await app.close();
   });
 
+  // Creating a post should return 201
   it('POST /api/blog/posts → 201', () => {
     return request(app.getHttpServer())
       .post('/api/blog/posts')
