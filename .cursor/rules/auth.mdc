@@ -24,7 +24,7 @@ alwaysApply: false
 - **One entry per login**, not per user.
 - On logout: delete the entry from the whitelist.
 - A scheduled **CRON job** must clean up expired tokens periodically.
-- The refresh endpoint must verify the refresh token against the whitelist to generate the new access token.
+- The refresh endpoint must verify the refresh token against the whitelist to generate the new access token, invalidate the current refresh token from whitelist (delete it) and generate a new refresh token also.
 
 ## Required pieces
 
