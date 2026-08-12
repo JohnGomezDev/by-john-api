@@ -34,6 +34,15 @@ export class PostTypeOrmEntity {
   @Column({ type: 'varchar', length: 160 })
   excerpt: string;
 
+  @Column({ name: 'meta_title', type: 'varchar', length: 255, nullable: true })
+  metaTitle: string | null;
+
+  @Column({ name: 'meta_description', type: 'varchar', length: 255, nullable: true })
+  metaDescription: string | null;
+
+  @Column({ name: 'og_image_url', type: 'varchar', length: 2048, nullable: true })
+  ogImageUrl: string | null;
+
   @Column({
     name: 'search_vector',
     type: 'tsvector',

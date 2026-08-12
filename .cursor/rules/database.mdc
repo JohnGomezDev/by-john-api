@@ -143,6 +143,9 @@ export class CategorySeeder implements Seeder {
 | slug | VARCHAR | UNIQUE NOT NULL |
 | content | TEXT | NOT NULL — stored as markdown |
 | excerpt | VARCHAR | ~160 chars, generated on save |
+| meta_title | VARCHAR | NULLABLE |
+| meta_description | VARCHAR | NULLABLE |
+| og_image_url | VARCHAR | NULLABLE |
 | search_vector | TSVECTOR | GENERATED ALWAYS AS `to_tsvector('spanish', title \|\| ' ' \|\| content)` STORED |
 | published | BOOLEAN | DEFAULT false |
 | published_at | TIMESTAMP | NULL when draft |

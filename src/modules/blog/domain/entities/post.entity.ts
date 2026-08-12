@@ -7,6 +7,9 @@ export class Post {
     readonly slug: string,
     readonly content: string,
     readonly excerpt: string,
+    readonly metaTitle: string | null,
+    readonly metaDescription: string | null,
+    readonly ogImageUrl: string | null,
     readonly published: boolean,
     readonly publishedAt: Date | null,
     readonly createdAt: Date,
@@ -22,6 +25,9 @@ export class Post {
     adminId: string;
     categoryId: string;
     excerpt?: string;
+    metaTitle?: string | null;
+    metaDescription?: string | null;
+    ogImageUrl?: string | null;
   }): Post {
     const now = new Date();
     return new Post(
@@ -30,6 +36,9 @@ export class Post {
       props.slug,
       props.content,
       props.excerpt ?? Post.buildExcerpt(props.content),
+      props.metaTitle ?? null,
+      props.metaDescription ?? null,
+      props.ogImageUrl ?? null,
       false,
       null,
       now,
@@ -55,6 +64,9 @@ export class Post {
       this.slug,
       this.content,
       this.excerpt,
+      this.metaTitle,
+      this.metaDescription,
+      this.ogImageUrl,
       true,
       now,
       this.createdAt,
@@ -75,6 +87,9 @@ export class Post {
       this.slug,
       this.content,
       this.excerpt,
+      this.metaTitle,
+      this.metaDescription,
+      this.ogImageUrl,
       false,
       null,
       this.createdAt,

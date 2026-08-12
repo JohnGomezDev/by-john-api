@@ -38,6 +38,9 @@ describe('Post', () => {
         slug: 'hello',
         content: 'Short content',
         excerpt: 'Short content',
+        metaTitle: null,
+        metaDescription: null,
+        ogImageUrl: null,
         published: false,
         publishedAt: null,
         createdAt: fixedNow,
@@ -78,6 +81,24 @@ describe('Post', () => {
     expect(post.excerpt).toBe('Custom excerpt');
   });
 
+  // Factory should persist optional SEO metadata when provided
+  it('should create a post with SEO metadata', () => {
+    const post = Post.create({
+      title: 'Hello',
+      slug: 'hello',
+      content: 'Content',
+      adminId,
+      categoryId,
+      metaTitle: 'SEO Title',
+      metaDescription: 'SEO Description',
+      ogImageUrl: 'https://example.com/og.png',
+    });
+
+    expect(post.metaTitle).toBe('SEO Title');
+    expect(post.metaDescription).toBe('SEO Description');
+    expect(post.ogImageUrl).toBe('https://example.com/og.png');
+  });
+
   // publish should mark the post as published and set publishedAt
   it('should publish a complete post', () => {
     const draft = Post.create({
@@ -86,6 +107,9 @@ describe('Post', () => {
       content: 'Content',
       adminId,
       categoryId,
+      metaTitle: 'SEO Title',
+      metaDescription: 'SEO Description',
+      ogImageUrl: 'https://example.com/og.png',
     });
 
     const published = draft.publish();
@@ -94,6 +118,9 @@ describe('Post', () => {
     expect(published.publishedAt).toEqual(fixedNow);
     expect(published.updatedAt).toEqual(fixedNow);
     expect(published.id).toBe(draft.id);
+    expect(published.metaTitle).toBe('SEO Title');
+    expect(published.metaDescription).toBe('SEO Description');
+    expect(published.ogImageUrl).toBe('https://example.com/og.png');
   });
 
   // publish should reject already published posts
@@ -117,6 +144,9 @@ describe('Post', () => {
       'slug',
       '',
       '',
+      null,
+      null,
+      null,
       false,
       null,
       fixedNow,
