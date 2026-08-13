@@ -10,15 +10,20 @@ jest.mock('@nestjs/core', () => ({
       setGlobalPrefix: jest.fn(),
       enableCors: jest.fn(),
       useGlobalPipes: jest.fn(),
+      useGlobalFilters: jest.fn(),
+      use: jest.fn(),
       listen: jest.fn(),
     }),
   },
 }));
 
-jest.mock('@nestjs/common', () => ({
-  Logger: jest.fn().mockReturnValue({ log: jest.fn() }),
-  ValidationPipe: jest.requireActual('@nestjs/common').ValidationPipe,
-}));
+jest.mock('@nestjs/common', () => {
+  const actual: Record<string, unknown> = jest.requireActual('@nestjs/common');
+  return {
+    ...actual,
+    Logger: jest.fn().mockReturnValue({ log: jest.fn() }),
+  };
+});
 
 jest.mock('@nestjs/swagger', () => ({
   DocumentBuilder: jest.fn().mockReturnValue({
@@ -44,6 +49,8 @@ describe('main', () => {
     setGlobalPrefix: jest.Mock;
     enableCors: jest.Mock;
     useGlobalPipes: jest.Mock;
+    useGlobalFilters: jest.Mock;
+    use: jest.Mock;
     listen: jest.Mock;
   };
 
@@ -54,6 +61,8 @@ describe('main', () => {
       setGlobalPrefix: jest.fn(),
       enableCors: jest.fn(),
       useGlobalPipes: jest.fn(),
+      useGlobalFilters: jest.fn(),
+      use: jest.fn(),
       listen: jest.fn(),
     };
 
@@ -70,7 +79,9 @@ describe('main', () => {
     await bootstrap();
 
     expect(NestFactory.create).toHaveBeenCalledWith(AppModule);
-    expect(mockLogger.log).toHaveBeenCalledWith(`Application running on http://localhost:${port}/api`);
+    expect(mockLogger.log).toHaveBeenCalledWith(
+      `Application running on http://localhost:${port}/api`,
+    );
   });
 
   // Global prefix should be set
@@ -129,6 +140,10 @@ describe('main', () => {
       mockApp,
       'doc-config',
     );
-    expect(SwaggerModule.setup).toHaveBeenCalledWith('api/docs', mockApp, 'doc');
+    expect(SwaggerModule.setup).toHaveBeenCalledWith(
+      'api/docs',
+      mockApp,
+      'doc',
+    );
   });
 });

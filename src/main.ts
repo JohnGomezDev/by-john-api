@@ -1,7 +1,9 @@
 import { Logger, ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import cookieParser from 'cookie-parser';
 import { AppModule } from './app.module';
+import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
 
 export async function bootstrap(): Promise<void> {
   const app = await NestFactory.create(AppModule);
@@ -15,6 +17,8 @@ export async function bootstrap(): Promise<void> {
 
   app.setGlobalPrefix('api');
 
+  app.use(cookieParser());
+
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,
@@ -25,6 +29,8 @@ export async function bootstrap(): Promise<void> {
       },
     }),
   );
+
+  app.useGlobalFilters(new AllExceptionsFilter());
 
   const swaggerConfig = new DocumentBuilder()
     .setTitle('Portfolio API')
