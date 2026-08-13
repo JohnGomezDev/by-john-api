@@ -6,69 +6,133 @@ alwaysApply: false
 
 # Authentication — JWT + Refresh Tokens
 
+Admin-only authentication. Login by `username` (not email). Follows the standard module layout (domain → application → infrastructure).
+
 ## Stack
 
-- `@nestjs/passport` + `passport-jwt` strategy.
-- Access token + refresh token flow.
+- `@nestjs/jwt` + `@nestjs/passport` + `passport-jwt` for access tokens.
+- `@nestjs/schedule` for the refresh-token cleanup CRON.
+- `bcrypt` via shared `IHasher` (`src/common/security/hasher.interface.ts`) — used for both admin passwords and refresh-token secrets.
+- `cookie-parser` registered in `main.ts` (required to read the refresh cookie).
 
 ## Token rules
 
 | Token | TTL | Storage |
 |---|---|---|
-| Access token | 15 minutes max | Authorization header (Bearer) |
-| Refresh token | 7 days | `httpOnly` + `sameSite` cookie |
+| Access token (JWT) | `JWT_ACCESS_EXPIRES_IN` (default `15m`) | `Authorization: Bearer <token>` header |
+| Refresh token (opaque) | `REFRESH_TOKEN_TTL_DAYS` (default `7`) | `refresh_token` cookie (`httpOnly`, `sameSite: strict`) |
 
-## Refresh token whitelist
+JWT payload: `{ sub: adminId, username }`. Strategy `validate()` returns `ICurrentUser` `{ id, username }` consumed by `@CurrentUser()`.
 
-- Stored in the database with: **hash** of the token, expiration date, and device identifier.
-- **One entry per login**, not per user.
-- On logout: delete the entry from the whitelist.
-- A scheduled **CRON job** must clean up expired tokens periodically.
-- The refresh endpoint must verify the refresh token against the whitelist to generate the new access token, invalidate the current refresh token from whitelist (delete it) and generate a new refresh token also.
+## Refresh token format
+
+Opaque cookie value: `"{id}.{secret}"`.
+
+| Part | Source | Purpose |
+|---|---|---|
+| `id` | UUID — PK of the whitelist row | Indexed lookup via `findById` |
+| `secret` | `randomBytes(32).toString('hex')` | Only its bcrypt hash is persisted in `tokenHash` |
+
+Encode/decode lives in `application/utils/refresh-token-codec.util.ts` (`buildRawRefreshToken`, `parseRawRefreshToken`).
+
+## Whitelist (`admin_refresh_tokens`)
+
+- **One row per login**, not per user. Multiple concurrent sessions are allowed.
+- Persisted fields: `tokenHash` (bcrypt of secret), `userAgent`, `expiresAt`, `adminId`. No `updated_at` — rows are created on login and deleted on logout/rotation; never updated.
+- On **refresh**: validate → delete old row → create new row → set new cookie (rotation).
+- On **logout**: delete row by `id` parsed from cookie; idempotent (missing/malformed cookie is not an error).
+- On **secret mismatch** (known `id`, wrong secret): delete the row immediately (possible token theft) and reject.
+- On **expired token**: delete if the row exists, then reject.
+- **CRON** (`RefreshTokenCleanupJob`, `@Cron(CronExpression.EVERY_HOUR)`): calls `deleteExpired()` on the repository.
+
+Domain entity: `AdminRefreshToken` (`domain/entities/admin-refresh-token.entity.ts`).
+Repository token: `ADMIN_REFRESH_TOKEN_REPOSITORY` → `IAdminRefreshTokenRepository` (`save`, `findById`, `deleteById`, `deleteExpired`).
+
+## Endpoints
+
+All return `ApiResponseDto<T>` with a specific `message` (never the generic default). Errors are thrown from use cases only.
+
+| Method | Path | Guard | Responsibility |
+|---|---|---|---|
+| `POST` | `/api/auth/login` | — | Authenticate admin, issue access token + set refresh cookie |
+| `POST` | `/api/auth/refresh` | — | Validate cookie against whitelist, rotate refresh token, issue new access token |
+| `DELETE` | `/api/auth/logout` | `JwtAuthGuard` | Delete whitelist row, clear cookie |
+
+Controller: `infrastructure/http/auth.controller.ts`. Zero logic — delegates to use cases, sets/clears cookie, wraps in `ApiResponseDto.ok`.
 
 ## Required pieces
 
 | Piece | Location | Responsibility |
 |---|---|---|
-| JWT Strategy | `modules/auth/infrastructure/passport/jwt.strategy.ts` | Validates the access token; returns the user payload used by `@CurrentUser()`. |
-| Auth Guard | `modules/auth/infrastructure/guards/jwt-auth.guard.ts` | Protects routes. |
-| `@CurrentUser()` decorator | `modules/auth/infrastructure/decorators/current-user.decorator.ts` | Extracts the authenticated user from `req.user` (populated by the strategy's `validate`). |
-| Refresh endpoint | `POST /api/auth/refresh` | Receives the refresh token (from cookie), validates against the whitelist, issues a new access token. |
-| Logout endpoint | `POST /api/auth/logout` | Deletes the refresh token entry from the whitelist and clears the cookie. |
-| CRON cleaner | `modules/auth/application/jobs/refresh-token-cleanup.job.ts` | Removes expired rows from the whitelist table. |
+| `LoginUseCase` | `application/use-cases/login/login.use-case.ts` | Validates credentials via `IAdminRepository` + `IHasher`; creates whitelist row; signs JWT |
+| `RefreshTokenUseCase` | `application/use-cases/refresh-token/refresh-token.use-case.ts` | Parses cookie, validates + rotates whitelist row, signs new JWT |
+| `LogoutUseCase` | `application/use-cases/logout/logout.use-case.ts` | Idempotent whitelist row deletion |
+| `RefreshTokenCleanupJob` | `application/jobs/refresh-token-cleanup.job.ts` | Hourly purge of expired rows |
+| `JwtStrategy` | `infrastructure/passport/jwt.strategy.ts` | Validates Bearer access token; populates `req.user` |
+| `JwtAuthGuard` | `infrastructure/guards/jwt-auth.guard.ts` | Protects routes (`AuthGuard('jwt')`) |
+| `@CurrentUser()` | `infrastructure/decorators/current-user.decorator.ts` | Extracts `ICurrentUser` from `req.user` |
+| `AUTH_MESSAGES` | `application/constants/auth-messages.constants.ts` | Centralized success/error messages (Spanish) |
 
-## Cookie setup (refresh token)
+## Response messages
+
+Import from `AUTH_MESSAGES` — never hardcode strings in use cases, controller, or tests.
+
+| Case | Message |
+|---|---|
+| Login success | `"Usuario logueado con éxito"` |
+| Invalid credentials | `"Usuario o contraseña incorrectos"` (same message whether username or password is wrong) |
+| Refresh success | `"Token renovado con éxito"` |
+| Invalid/malformed cookie | `"Sesión inválida, por favor inicia sesión nuevamente"` |
+| Expired / not found / secret mismatch | `"Sesión expirada, por favor inicia sesión nuevamente"` |
+| Logout success | `"Sesión cerrada con éxito"` |
+
+## Cookie setup
 
 ```typescript
-res.cookie('refresh_token', token, {
+res.cookie('refresh_token', rawRefreshToken, {
   httpOnly: true,
   sameSite: 'strict',
-  secure: true,           // always true in production
-  maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days in ms
+  secure: configService.get('NODE_ENV') === 'production',
+  maxAge: ttlDays * 24 * 60 * 60 * 1000,
 });
 ```
 
 ## Whitelist entity (reference)
 
 ```typescript
-@Entity('refresh_tokens')
-export class RefreshTokenTypeOrmEntity {
+@Entity('admin_refresh_tokens')
+export class AdminRefreshTokenTypeOrmEntity {
   @PrimaryColumn('uuid')
   id: string;
 
-  @Column({ type: 'varchar', length: 255 })
-  tokenHash: string;       // bcrypt hash of the raw token
+  @Column({ name: 'token_hash', type: 'varchar', length: 255 })
+  tokenHash: string;       // bcrypt hash of the secret (NOT the full cookie value)
 
-  @Column({ type: 'varchar', length: 255 })
-  deviceId: string;        // fingerprint or user-agent hash
+  @Column({ name: 'user_agent', type: 'varchar', length: 255 })
+  userAgent: string;
 
-  @Column()
-  userId: string;
-
-  @Column()
+  @Column({ name: 'expires_at', type: 'timestamp' })
   expiresAt: Date;
 
-  @CreateDateColumn()
+  @CreateDateColumn({ name: 'created_at', type: 'timestamp' })
   createdAt: Date;
+
+  @Column({ name: 'admin_id', type: 'uuid' })
+  adminId: string;
 }
 ```
+
+## Module wiring
+
+`AuthModule` imports: `AdminModule` (for `ADMIN_REPOSITORY`), `PassportModule`, `ScheduleModule.forRoot()`, `TypeOrmModule.forFeature([AdminRefreshTokenTypeOrmEntity])`, `JwtModule.registerAsync` (secret/expiry from `ConfigService`).
+
+Providers: repository binding, `HASHER` → `BcryptHasherImpl`, all use cases, `JwtStrategy`, `RefreshTokenCleanupJob`.
+
+## Environment variables
+
+| Variable | Default | Used by |
+|---|---|---|
+| `JWT_ACCESS_SECRET` | — (required) | `JwtModule`, `JwtStrategy` |
+| `JWT_ACCESS_EXPIRES_IN` | `15m` | `JwtModule.signOptions.expiresIn` |
+| `REFRESH_TOKEN_TTL_DAYS` | `7` | Login/refresh use cases, cookie `maxAge` |
+| `NODE_ENV` | — | Cookie `secure` flag (`production` → `true`) |
