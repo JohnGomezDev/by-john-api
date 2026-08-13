@@ -6,7 +6,7 @@ import { DatabaseModule } from './database/database.module';
 import { AdminModule } from './modules/admin/admin.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { BlogModule } from './modules/blog/blog.module';
-import { SpotifyModule } from './modules/spotify/spotify.module';
+import { SongsModule } from './modules/songs/songs.module';
 
 @Module({
   imports: [
@@ -17,7 +17,7 @@ import { SpotifyModule } from './modules/spotify/spotify.module';
     AdminModule,
     AuthModule,
     BlogModule,
-    SpotifyModule,
+    SongsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

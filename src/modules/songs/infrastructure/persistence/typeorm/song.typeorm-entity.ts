@@ -5,10 +5,10 @@ import {
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
-import type { TSpotifyArtist } from '../../../domain/entities/spotify-track.entity';
+import type { TArtist } from '../../../domain/entities/song.entity';
 
-@Entity('spotify_tracks')
-export class SpotifyTrackTypeOrmEntity {
+@Entity('songs')
+export class SongTypeOrmEntity {
   @PrimaryGeneratedColumn()
   id: number;
 
@@ -19,7 +19,7 @@ export class SpotifyTrackTypeOrmEntity {
   trackName: string;
 
   @Column({ type: 'jsonb' })
-  artists: TSpotifyArtist[];
+  artists: TArtist[];
 
   @Column({ name: 'album_id', type: 'varchar', length: 255 })
   albumId: string;
@@ -30,8 +30,8 @@ export class SpotifyTrackTypeOrmEntity {
   @Column({ name: 'album_cover_url', type: 'varchar', length: 2048 })
   albumCoverUrl: string;
 
-  @Column({ name: 'spotify_url', type: 'varchar', length: 2048 })
-  spotifyUrl: string;
+  @Column({ name: 'url', type: 'varchar', length: 2048 })
+  url: string;
 
   @Column({ name: 'preview_url', type: 'varchar', length: 2048, nullable: true })
   previewUrl: string | null;
