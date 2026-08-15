@@ -1,5 +1,4 @@
 import { Inject, Injectable, UnauthorizedException } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { randomBytes } from 'node:crypto';
 import {
@@ -24,6 +23,7 @@ import {
 export interface IRefreshTokenResult {
   accessToken: string;
   rawRefreshToken: string;
+  expiresAt: Date;
 }
 
 @Injectable()
@@ -36,7 +36,6 @@ export class RefreshTokenUseCase {
     @Inject(HASHER)
     private readonly hasher: IHasher,
     private readonly jwtService: JwtService,
-    private readonly configService: ConfigService,
   ) {}
 
   async execute(
@@ -75,15 +74,11 @@ export class RefreshTokenUseCase {
     await this.refreshTokenRepository.deleteById(storedToken.id);
 
     const secret = randomBytes(32).toString('hex');
-    const ttlDays = Number(
-      this.configService.get('REFRESH_TOKEN_TTL_DAYS', '7'),
-    );
-    const expiresAt = new Date(Date.now() + ttlDays * 24 * 60 * 60 * 1000);
-
+    // Inherit the previous expiry so a session never extends past the original login window.
     const newRefreshToken = AdminRefreshToken.create({
       tokenHash: await this.hasher.hash(secret),
       userAgent,
-      expiresAt,
+      expiresAt: storedToken.expiresAt,
       adminId: admin.id,
     });
     const savedRefreshToken =
@@ -97,6 +92,7 @@ export class RefreshTokenUseCase {
     return {
       accessToken,
       rawRefreshToken: buildRawRefreshToken(savedRefreshToken.id, secret),
+      expiresAt: savedRefreshToken.expiresAt,
     };
   }
 }

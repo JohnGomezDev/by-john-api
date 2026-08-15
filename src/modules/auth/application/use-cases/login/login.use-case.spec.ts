@@ -21,14 +21,10 @@ jest.mock('node:crypto', () => {
 
 interface IMockedAdminRepository {
   findByUsername: jest.Mock;
-  findById: jest.Mock;
 }
 
 interface IMockedRefreshTokenRepository {
   save: jest.Mock;
-  findById: jest.Mock;
-  deleteById: jest.Mock;
-  deleteExpired: jest.Mock;
 }
 
 interface IMockedHasher {
@@ -36,13 +32,21 @@ interface IMockedHasher {
   compare: jest.Mock;
 }
 
+interface IMockedJwtService {
+  sign: jest.Mock;
+}
+
+interface IMockedConfigService {
+  getOrThrow: jest.Mock;
+}
+
 describe('LoginUseCase', () => {
   let useCase: LoginUseCase;
   let adminRepository: IMockedAdminRepository;
   let refreshTokenRepository: IMockedRefreshTokenRepository;
   let hasher: IMockedHasher;
-  let jwtService: { sign: jest.Mock };
-  let configService: { get: jest.Mock };
+  let jwtService: IMockedJwtService;
+  let configService: IMockedConfigService;
 
   const admin = new Admin(
     'admin-id',
@@ -59,22 +63,19 @@ describe('LoginUseCase', () => {
     });
 
     jwtService = { sign: jest.fn().mockReturnValue('signed-access-token') };
-    configService = { get: jest.fn().mockReturnValue('7') };
+    configService = { getOrThrow: jest.fn().mockReturnValue('48') };
 
     const module = await Test.createTestingModule({
       providers: [
         LoginUseCase,
         {
           provide: ADMIN_REPOSITORY,
-          useValue: { findByUsername: jest.fn(), findById: jest.fn() },
+          useValue: { findByUsername: jest.fn() },
         },
         {
           provide: ADMIN_REFRESH_TOKEN_REPOSITORY,
           useValue: {
             save: jest.fn(),
-            findById: jest.fn(),
-            deleteById: jest.fn(),
-            deleteExpired: jest.fn(),
           },
         },
         { provide: HASHER, useValue: { hash: jest.fn(), compare: jest.fn() } },
@@ -89,47 +90,69 @@ describe('LoginUseCase', () => {
     hasher = module.get(HASHER);
   });
 
-  // Successful login should return the access token, raw refresh token and admin
+  // Successful login should return the access token, raw refresh token, expiresAt and admin
   it('should return tokens and admin on successful login', async () => {
-    adminRepository.findByUsername.mockResolvedValue(admin);
-    hasher.compare.mockResolvedValue(true);
-    hasher.hash.mockResolvedValue('hashed-secret');
-    refreshTokenRepository.save.mockImplementation((token: AdminRefreshToken) =>
-      Promise.resolve(token),
-    );
+    const fixedNow = new Date('2026-01-15T10:00:00.000Z');
+    jest.useFakeTimers();
+    jest.setSystemTime(fixedNow);
 
-    const result = await useCase.execute(
-      { username: 'admin', password: 'plain' },
-      'Mozilla/5.0',
-    );
+    try {
+      adminRepository.findByUsername.mockResolvedValue(admin);
+      hasher.compare.mockResolvedValue(true);
+      hasher.hash.mockResolvedValue('hashed-secret');
+      refreshTokenRepository.save.mockImplementation(
+        (token: AdminRefreshToken) => Promise.resolve(token),
+      );
 
-    expect(result.accessToken).toBe('signed-access-token');
-    expect(result.admin).toBe(admin);
-    expect(result.rawRefreshToken).toContain('.random-secret');
+      const result = await useCase.execute(
+        { username: 'admin', password: 'plain' },
+        'Mozilla/5.0',
+      );
+
+      expect(result.accessToken).toBe('signed-access-token');
+      expect(result.admin).toBe(admin);
+      expect(result.rawRefreshToken).toContain('.random-secret');
+      expect(result.expiresAt).toEqual(
+        new Date(fixedNow.getTime() + 48 * 60 * 60 * 1000),
+      );
+    } finally {
+      jest.useRealTimers();
+    }
   });
 
-  // Successful login should persist the refresh token in the whitelist
+  // Successful login should persist the refresh token in the whitelist with a 48h TTL
   it('should persist the refresh token on successful login', async () => {
     let savedToken: AdminRefreshToken | undefined;
-    adminRepository.findByUsername.mockResolvedValue(admin);
-    hasher.compare.mockResolvedValue(true);
-    hasher.hash.mockResolvedValue('hashed-secret');
-    refreshTokenRepository.save.mockImplementation(
-      (token: AdminRefreshToken) => {
-        savedToken = token;
-        return Promise.resolve(token);
-      },
-    );
+    const fixedNow = new Date('2026-01-15T10:00:00.000Z');
+    jest.useFakeTimers();
+    jest.setSystemTime(fixedNow);
 
-    await useCase.execute(
-      { username: 'admin', password: 'plain' },
-      'Mozilla/5.0',
-    );
+    try {
+      adminRepository.findByUsername.mockResolvedValue(admin);
+      hasher.compare.mockResolvedValue(true);
+      hasher.hash.mockResolvedValue('hashed-secret');
+      refreshTokenRepository.save.mockImplementation(
+        (token: AdminRefreshToken) => {
+          savedToken = token;
+          return Promise.resolve(token);
+        },
+      );
 
-    expect(refreshTokenRepository.save).toHaveBeenCalledTimes(1);
-    expect(savedToken?.adminId).toBe(admin.id);
-    expect(savedToken?.tokenHash).toBe('hashed-secret');
-    expect(savedToken?.userAgent).toBe('Mozilla/5.0');
+      await useCase.execute(
+        { username: 'admin', password: 'plain' },
+        'Mozilla/5.0',
+      );
+
+      expect(refreshTokenRepository.save).toHaveBeenCalledTimes(1);
+      expect(savedToken?.adminId).toBe(admin.id);
+      expect(savedToken?.tokenHash).toBe('hashed-secret');
+      expect(savedToken?.userAgent).toBe('Mozilla/5.0');
+      expect(savedToken?.expiresAt).toEqual(
+        new Date(fixedNow.getTime() + 48 * 60 * 60 * 1000),
+      );
+    } finally {
+      jest.useRealTimers();
+    }
   });
 
   // Non-existent username should be rejected with a generic message

@@ -3,10 +3,7 @@ import { ADMIN_REFRESH_TOKEN_REPOSITORY } from '../../../domain/repositories/adm
 import { LogoutUseCase } from './logout.use-case';
 
 interface IMockedRefreshTokenRepository {
-  save: jest.Mock;
-  findById: jest.Mock;
   deleteById: jest.Mock;
-  deleteExpired: jest.Mock;
 }
 
 describe('LogoutUseCase', () => {
@@ -20,10 +17,7 @@ describe('LogoutUseCase', () => {
         {
           provide: ADMIN_REFRESH_TOKEN_REPOSITORY,
           useValue: {
-            save: jest.fn(),
-            findById: jest.fn(),
             deleteById: jest.fn(),
-            deleteExpired: jest.fn(),
           },
         },
       ],

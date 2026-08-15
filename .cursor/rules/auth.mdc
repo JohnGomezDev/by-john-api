@@ -20,7 +20,7 @@ Admin-only authentication. Login by `username` (not email). Follows the standard
 | Token | TTL | Storage |
 |---|---|---|
 | Access token (JWT) | `JWT_ACCESS_EXPIRES_IN` (default `15m`) | `Authorization: Bearer <token>` header |
-| Refresh token (opaque) | `REFRESH_TOKEN_TTL_DAYS` (default `7`) | `refresh_token` cookie (`httpOnly`, `sameSite: strict`) |
+| Refresh token (opaque) | `REFRESH_TOKEN_TTL_HOURS` (default `48`) | `refresh_token` cookie (`httpOnly`, `sameSite: strict`) |
 
 JWT payload: `{ sub: adminId, username }`. Strategy `validate()` returns `ICurrentUser` `{ id, username }` consumed by `@CurrentUser()`.
 
@@ -39,7 +39,7 @@ Encode/decode lives in `application/utils/refresh-token-codec.util.ts` (`buildRa
 
 - **One row per login**, not per user. Multiple concurrent sessions are allowed.
 - Persisted fields: `tokenHash` (bcrypt of secret), `userAgent`, `expiresAt`, `adminId`. No `updated_at` — rows are created on login and deleted on logout/rotation; never updated.
-- On **refresh**: validate → delete old row → create new row → set new cookie (rotation).
+- On **refresh**: validate → delete old row → create new row **reusing the previous `expiresAt`** (session never extends past the original login window) → set new cookie (rotation).
 - On **logout**: delete row by `id` parsed from cookie; idempotent (missing/malformed cookie is not an error).
 - On **secret mismatch** (known `id`, wrong secret): delete the row immediately (possible token theft) and reject.
 - On **expired token**: delete if the row exists, then reject.
@@ -93,7 +93,7 @@ res.cookie('refresh_token', rawRefreshToken, {
   httpOnly: true,
   sameSite: 'strict',
   secure: configService.get('NODE_ENV') === 'production',
-  maxAge: ttlDays * 24 * 60 * 60 * 1000,
+  expires: expiresAt, // absolute date from the whitelist row — never recalculated on refresh
 });
 ```
 
@@ -134,5 +134,5 @@ Providers: repository binding, `HASHER` → `BcryptHasherImpl`, all use cases, `
 |---|---|---|
 | `JWT_ACCESS_SECRET` | — (required) | `JwtModule`, `JwtStrategy` |
 | `JWT_ACCESS_EXPIRES_IN` | `15m` | `JwtModule.signOptions.expiresIn` |
-| `REFRESH_TOKEN_TTL_DAYS` | `7` | Login/refresh use cases, cookie `maxAge` |
+| `REFRESH_TOKEN_TTL_HOURS` | `48` | Login use case only (refresh inherits previous `expiresAt`; cookie uses absolute `expires`) |
 | `NODE_ENV` | — | Cookie `secure` flag (`production` → `true`) |

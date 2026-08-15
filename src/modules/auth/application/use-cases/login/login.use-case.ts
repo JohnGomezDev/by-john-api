@@ -27,6 +27,7 @@ export interface ILoginDto {
 export interface ILoginResult {
   accessToken: string;
   rawRefreshToken: string;
+  expiresAt: Date;
   admin: Admin;
 }
 
@@ -58,10 +59,10 @@ export class LoginUseCase {
     }
 
     const secret = randomBytes(32).toString('hex');
-    const ttlDays = Number(
-      this.configService.getOrThrow<string>('REFRESH_TOKEN_TTL_DAYS'),
+    const ttlHours = Number(
+      this.configService.getOrThrow<string>('REFRESH_TOKEN_TTL_HOURS'),
     );
-    const expiresAt = new Date(Date.now() + ttlDays * 24 * 60 * 60 * 1000);
+    const expiresAt = new Date(Date.now() + ttlHours * 60 * 60 * 1000);
 
     const refreshToken = AdminRefreshToken.create({
       tokenHash: await this.hasher.hash(secret),
@@ -80,6 +81,7 @@ export class LoginUseCase {
     return {
       accessToken,
       rawRefreshToken: buildRawRefreshToken(savedRefreshToken.id, secret),
+      expiresAt: savedRefreshToken.expiresAt,
       admin,
     };
   }

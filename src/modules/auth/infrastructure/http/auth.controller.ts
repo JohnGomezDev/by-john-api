@@ -63,13 +63,13 @@ export class AuthController {
     @Req() req: Request,
     @Res({ passthrough: true }) res: Response,
   ): Promise<ApiResponseDto<LoginResponseDto>> {
-    const { accessToken, rawRefreshToken, admin } =
+    const { accessToken, rawRefreshToken, expiresAt, admin } =
       await this.loginUseCase.execute(
         dto,
         req.headers['user-agent'] ?? 'unknown',
       );
 
-    this.setRefreshTokenCookie(res, rawRefreshToken);
+    this.setRefreshTokenCookie(res, rawRefreshToken, expiresAt);
 
     return ApiResponseDto.ok(
       LoginResponseDto.fromDomain(accessToken, admin),
@@ -93,13 +93,13 @@ export class AuthController {
     @Req() req: Request,
     @Res({ passthrough: true }) res: Response,
   ): Promise<ApiResponseDto<RefreshTokenResponseDto>> {
-    const { accessToken, rawRefreshToken } =
+    const { accessToken, rawRefreshToken, expiresAt } =
       await this.refreshTokenUseCase.execute(
         getRefreshTokenCookie(req),
         req.headers['user-agent'] ?? 'unknown',
       );
 
-    this.setRefreshTokenCookie(res, rawRefreshToken);
+    this.setRefreshTokenCookie(res, rawRefreshToken, expiresAt);
 
     return ApiResponseDto.ok(
       RefreshTokenResponseDto.fromAccessToken(accessToken),
@@ -127,16 +127,16 @@ export class AuthController {
     return ApiResponseDto.ok(null, AUTH_MESSAGES.LOGOUT_SUCCESS);
   }
 
-  private setRefreshTokenCookie(res: Response, rawRefreshToken: string): void {
-    const ttlDays = Number(
-      this.configService.get('REFRESH_TOKEN_TTL_DAYS', '7'),
-    );
-
+  private setRefreshTokenCookie(
+    res: Response,
+    rawRefreshToken: string,
+    expiresAt: Date,
+  ): void {
     res.cookie(REFRESH_TOKEN_COOKIE, rawRefreshToken, {
       httpOnly: true,
       sameSite: 'strict',
       secure: this.configService.get('NODE_ENV') === 'production',
-      maxAge: ttlDays * 24 * 60 * 60 * 1000,
+      expires: expiresAt,
     });
   }
 }

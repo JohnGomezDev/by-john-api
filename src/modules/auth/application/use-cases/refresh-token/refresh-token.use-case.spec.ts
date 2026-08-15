@@ -1,5 +1,4 @@
 import { UnauthorizedException } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { Test } from '@nestjs/testing';
 import { randomBytes } from 'node:crypto';
@@ -20,7 +19,6 @@ jest.mock('node:crypto', () => {
 });
 
 interface IMockedAdminRepository {
-  findByUsername: jest.Mock;
   findById: jest.Mock;
 }
 
@@ -28,7 +26,6 @@ interface IMockedRefreshTokenRepository {
   save: jest.Mock;
   findById: jest.Mock;
   deleteById: jest.Mock;
-  deleteExpired: jest.Mock;
 }
 
 interface IMockedHasher {
@@ -51,11 +48,13 @@ describe('RefreshTokenUseCase', () => {
     new Date('2026-01-01'),
   );
 
+  const originalExpiresAt = new Date(Date.now() + 60 * 60 * 1000);
+
   const validStoredToken = new AdminRefreshToken(
     'token-id',
     'stored-hash',
     'Mozilla/5.0',
-    new Date(Date.now() + 60 * 60 * 1000),
+    originalExpiresAt,
     new Date(),
     admin.id,
   );
@@ -70,7 +69,7 @@ describe('RefreshTokenUseCase', () => {
         RefreshTokenUseCase,
         {
           provide: ADMIN_REPOSITORY,
-          useValue: { findByUsername: jest.fn(), findById: jest.fn() },
+          useValue: { findById: jest.fn() },
         },
         {
           provide: ADMIN_REFRESH_TOKEN_REPOSITORY,
@@ -78,17 +77,12 @@ describe('RefreshTokenUseCase', () => {
             save: jest.fn(),
             findById: jest.fn(),
             deleteById: jest.fn(),
-            deleteExpired: jest.fn(),
           },
         },
         { provide: HASHER, useValue: { hash: jest.fn(), compare: jest.fn() } },
         {
           provide: JwtService,
           useValue: { sign: jest.fn().mockReturnValue('new-access-token') },
-        },
-        {
-          provide: ConfigService,
-          useValue: { get: jest.fn().mockReturnValue('7') },
         },
       ],
     }).compile();
@@ -99,14 +93,18 @@ describe('RefreshTokenUseCase', () => {
     hasher = module.get(HASHER);
   });
 
-  // Valid refresh token should rotate the whitelist row and return new tokens
+  // Valid refresh token should rotate the whitelist row and inherit the previous expiresAt
   it('should rotate the refresh token and return a new access token', async () => {
+    let savedToken: AdminRefreshToken | undefined;
     refreshTokenRepository.findById.mockResolvedValue(validStoredToken);
     hasher.compare.mockResolvedValue(true);
     adminRepository.findById.mockResolvedValue(admin);
     hasher.hash.mockResolvedValue('new-hash');
-    refreshTokenRepository.save.mockImplementation((token: AdminRefreshToken) =>
-      Promise.resolve(token),
+    refreshTokenRepository.save.mockImplementation(
+      (token: AdminRefreshToken) => {
+        savedToken = token;
+        return Promise.resolve(token);
+      },
     );
 
     const result = await useCase.execute('token-id.old-secret', 'Mozilla/5.0');
@@ -115,6 +113,8 @@ describe('RefreshTokenUseCase', () => {
     expect(refreshTokenRepository.save).toHaveBeenCalledTimes(1);
     expect(result.accessToken).toBe('new-access-token');
     expect(result.rawRefreshToken).toContain('.new-secret');
+    expect(result.expiresAt).toEqual(originalExpiresAt);
+    expect(savedToken?.expiresAt).toEqual(originalExpiresAt);
   });
 
   // Missing or malformed cookie should be rejected before touching the repository
