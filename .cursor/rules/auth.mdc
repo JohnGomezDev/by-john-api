@@ -22,7 +22,7 @@ Admin-only authentication. Login by `username` (not email). Follows the standard
 | Access token (JWT) | `JWT_ACCESS_EXPIRES_IN` (default `15m`) | `Authorization: Bearer <token>` header |
 | Refresh token (opaque) | `REFRESH_TOKEN_TTL_HOURS` (default `48`) | `refresh_token` cookie (`httpOnly`, `sameSite: strict`) |
 
-JWT payload: `{ sub: adminId, username }`. Strategy `validate()` returns `ICurrentUser` `{ id, username }` consumed by `@CurrentUser()`.
+JWT payload: `{ sub: adminId, name, lastName, username }`. Strategy `validate()` returns `ICurrentUser` `{ id, name, lastName, username }` consumed by `@CurrentUser()`.
 
 ## Refresh token format
 

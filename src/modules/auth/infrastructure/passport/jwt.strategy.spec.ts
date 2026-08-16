@@ -12,8 +12,18 @@ describe('JwtStrategy', () => {
 
   // validate() must expose the shape consumed by @CurrentUser()
   it('should return the current user shape from the JWT payload', () => {
-    const result = strategy.validate({ sub: 'admin-id', username: 'admin' });
+    const result = strategy.validate({
+      sub: 'admin-id',
+      name: 'John',
+      lastName: 'Doe',
+      username: 'admin',
+    });
 
-    expect(result).toEqual({ id: 'admin-id', username: 'admin' });
+    expect(result).toEqual({
+      id: 'admin-id',
+      name: 'John',
+      lastName: 'Doe',
+      username: 'admin',
+    });
   });
 });

@@ -41,6 +41,8 @@ describe('RefreshTokenUseCase', () => {
 
   const admin = new Admin(
     'admin-id',
+    'John',
+    'Doe',
     'admin',
     'admin@portfolio.com',
     'hashed-password',

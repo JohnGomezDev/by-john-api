@@ -14,6 +14,12 @@ export class AdminTypeOrmEntity {
   @PrimaryColumn('uuid')
   id: string;
 
+  @Column({ type: 'varchar', length: 100 })
+  name: string;
+
+  @Column({ name: 'last_name', type: 'varchar', length: 100 })
+  lastName: string;
+
   @Column({ type: 'varchar', length: 255, unique: true })
   username: string;
 

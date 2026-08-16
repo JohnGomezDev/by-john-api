@@ -25,6 +25,8 @@ export class AdminRepositoryImpl implements IAdminRepository {
   private toDomain(e: AdminTypeOrmEntity): Admin {
     return new Admin(
       e.id,
+      e.name,
+      e.lastName,
       e.username,
       e.email,
       e.passwordHash,

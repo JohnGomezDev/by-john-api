@@ -22,6 +22,8 @@ describe('Admin', () => {
   // Factory should create an admin with the given credentials
   it('should create an admin with provided props', () => {
     const admin = Admin.create({
+      name: 'John',
+      lastName: 'Doe',
       username: 'john',
       email: 'john@example.com',
       passwordHash: 'hashed-password',
@@ -30,6 +32,8 @@ describe('Admin', () => {
     expect(admin).toEqual(
       expect.objectContaining({
         id: fixedUuid,
+        name: 'John',
+        lastName: 'Doe',
         username: 'john',
         email: 'john@example.com',
         passwordHash: 'hashed-password',

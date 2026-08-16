@@ -75,6 +75,8 @@ export class LoginUseCase {
 
     const accessToken = this.jwtService.sign({
       sub: admin.id,
+      name: admin.name,
+      lastName: admin.lastName,
       username: admin.username,
     });
 
