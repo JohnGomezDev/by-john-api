@@ -2,6 +2,7 @@ import {
   ConflictException,
   Inject,
   Injectable,
+  NotFoundException,
 } from '@nestjs/common';
 import { QueryFailedError } from 'typeorm';
 import { Post } from '../../../domain/entities/post.entity';
@@ -45,13 +46,16 @@ export class AdminCreatePostUseCase {
 
       return await this.postRepository.save(post, dto.tagIds ?? []);
     } catch (error) {
-      if (
-        error instanceof QueryFailedError &&
-        (error as unknown as { code?: string }).code === '23505'
-      ) {
-        throw new ConflictException(
-          `El post con el slug ${dto.slug} ya existe`,
-        );
+      if (error instanceof QueryFailedError) {
+        const code = (error as unknown as { code?: string }).code;
+        if (code === '23505') {
+          throw new ConflictException(
+            `El post con el slug ${dto.slug} ya existe`,
+          );
+        }
+        if (code === '23503') {
+          throw new NotFoundException('La categoría especificada no existe');
+        }
       }
       throw error;
     }

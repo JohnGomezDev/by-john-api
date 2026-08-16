@@ -12,6 +12,7 @@ import {
   ApiBody,
   ApiConflictResponse,
   ApiCreatedResponse,
+  ApiNotFoundResponse,
   ApiOperation,
   ApiTags,
   ApiUnauthorizedResponse,
@@ -43,6 +44,7 @@ export class AdminPostController {
   })
   @ApiBadRequestResponse({ description: 'Datos inválidos' })
   @ApiConflictResponse({ description: 'El slug ya existe' })
+  @ApiNotFoundResponse({ description: 'La categoría especificada no existe' })
   @ApiUnauthorizedResponse({ description: 'No autenticado' })
   @HttpCode(HttpStatus.CREATED)
   @Post()
