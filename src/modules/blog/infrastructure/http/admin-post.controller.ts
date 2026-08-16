@@ -4,6 +4,8 @@ import {
   Get,
   HttpCode,
   HttpStatus,
+  Param,
+  ParseUUIDPipe,
   Post,
   Query,
   UseGuards,
@@ -14,15 +16,18 @@ import {
   ApiBody,
   ApiConflictResponse,
   ApiCreatedResponse,
+  ApiForbiddenResponse,
   ApiNotFoundResponse,
   ApiOkResponse,
   ApiOperation,
+  ApiParam,
   ApiTags,
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
 import type { Pagination } from 'nestjs-typeorm-paginate';
 import { ApiResponseDto } from '../../../../common/dto/response/api-response.dto';
 import { AdminCreatePostUseCase } from '../../application/use-cases/admin-create-post/admin-create-post.use-case';
+import { AdminGetPostUseCase } from '../../application/use-cases/admin-get-post/admin-get-post.use-case';
 import { AdminListPostsUseCase } from '../../application/use-cases/admin-list-posts/admin-list-posts.use-case';
 import { CurrentUser } from '../../../auth/infrastructure/decorators/current-user.decorator';
 import type { ICurrentUser } from '../../../auth/infrastructure/passport/jwt.strategy';
@@ -41,6 +46,7 @@ export class AdminPostController {
   constructor(
     private readonly adminCreatePostUseCase: AdminCreatePostUseCase,
     private readonly adminListPostsUseCase: AdminListPostsUseCase,
+    private readonly adminGetPostUseCase: AdminGetPostUseCase,
   ) {}
 
   @ApiOperation({
@@ -93,6 +99,31 @@ export class AdminPostController {
         items: result.items.map(PostListItemResponseDto.fromDomain),
       },
       'Listado de posts obtenido exitosamente',
+    );
+  }
+
+  @ApiOperation({
+    summary: 'Obtener un post por id',
+    description:
+      'Retorna el detalle completo de un post del usuario autenticado, listo para edición. Busca por id, no por slug.',
+  })
+  @ApiParam({ name: 'id', description: 'UUID del post', format: 'uuid' })
+  @ApiOkResponse({
+    description: 'Post obtenido exitosamente',
+    type: PostDetailResponseDto,
+  })
+  @ApiNotFoundResponse({ description: 'Post no encontrado' })
+  @ApiForbiddenResponse({ description: 'El post no pertenece al usuario' })
+  @ApiUnauthorizedResponse({ description: 'No autenticado' })
+  @Get(':id')
+  async getById(
+    @Param('id', ParseUUIDPipe) id: string,
+    @CurrentUser() user: ICurrentUser,
+  ): Promise<ApiResponseDto<PostDetailResponseDto>> {
+    const post = await this.adminGetPostUseCase.execute(id, user.id);
+    return ApiResponseDto.ok(
+      PostDetailResponseDto.fromDomain(post),
+      'Post obtenido exitosamente',
     );
   }
 }

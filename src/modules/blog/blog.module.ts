@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AdminCreatePostUseCase } from './application/use-cases/admin-create-post/admin-create-post.use-case';
+import { AdminGetPostUseCase } from './application/use-cases/admin-get-post/admin-get-post.use-case';
 import { AdminListPostsUseCase } from './application/use-cases/admin-list-posts/admin-list-posts.use-case';
 import { POST_REPOSITORY } from './domain/repositories/post.repository.interface';
 import { AdminPostController } from './infrastructure/http/admin-post.controller';
@@ -25,6 +26,7 @@ import { TagTypeOrmEntity } from './infrastructure/persistence/typeorm/tag.typeo
     },
     AdminCreatePostUseCase,
     AdminListPostsUseCase,
+    AdminGetPostUseCase,
   ],
   exports: [TypeOrmModule, POST_REPOSITORY],
 })
