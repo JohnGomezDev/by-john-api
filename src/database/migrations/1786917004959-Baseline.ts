@@ -1,7 +1,7 @@
 import { MigrationInterface, QueryRunner } from "typeorm";
 
-export class Baseline1786646077015 implements MigrationInterface {
-    name = 'Baseline1786646077015'
+export class Baseline1786917004959 implements MigrationInterface {
+    name = 'Baseline1786917004959'
 
     public async up(queryRunner: QueryRunner): Promise<void> {
         await queryRunner.query(`CREATE TABLE "admin_refresh_tokens" ("id" uuid NOT NULL, "token_hash" character varying(255) NOT NULL, "user_agent" character varying(255) NOT NULL, "expires_at" TIMESTAMP NOT NULL, "created_at" TIMESTAMP NOT NULL DEFAULT now(), "admin_id" uuid NOT NULL, CONSTRAINT "PK_341c4a1fa29fa0017ed8ad0791f" PRIMARY KEY ("id"))`);
@@ -14,7 +14,7 @@ export class Baseline1786646077015 implements MigrationInterface {
         await queryRunner.query(`CREATE INDEX "idx_post_search" ON "posts"  ("search_vector") `);
         await queryRunner.query(`CREATE INDEX "idx_post_category" ON "posts"  ("category_id") `);
         await queryRunner.query(`CREATE UNIQUE INDEX "idx_post_slug" ON "posts"  ("slug") `);
-        await queryRunner.query(`CREATE TABLE "admin_users" ("id" uuid NOT NULL, "username" character varying(255) NOT NULL, "email" character varying(255) NOT NULL, "password_hash" character varying(255) NOT NULL, "created_at" TIMESTAMP NOT NULL DEFAULT now(), "updated_at" TIMESTAMP NOT NULL DEFAULT now(), CONSTRAINT "UQ_2873882c38e8c07d98cb64f962d" UNIQUE ("username"), CONSTRAINT "UQ_dcd0c8a4b10af9c986e510b9ecc" UNIQUE ("email"), CONSTRAINT "PK_06744d221bb6145dc61e5dc441d" PRIMARY KEY ("id"))`);
+        await queryRunner.query(`CREATE TABLE "admin_users" ("id" uuid NOT NULL, "name" character varying(100) NOT NULL, "last_name" character varying(100) NOT NULL, "username" character varying(255) NOT NULL, "email" character varying(255) NOT NULL, "password_hash" character varying(255) NOT NULL, "created_at" TIMESTAMP NOT NULL DEFAULT now(), "updated_at" TIMESTAMP NOT NULL DEFAULT now(), CONSTRAINT "UQ_2873882c38e8c07d98cb64f962d" UNIQUE ("username"), CONSTRAINT "UQ_dcd0c8a4b10af9c986e510b9ecc" UNIQUE ("email"), CONSTRAINT "PK_06744d221bb6145dc61e5dc441d" PRIMARY KEY ("id"))`);
         await queryRunner.query(`CREATE TABLE "songs" ("id" SERIAL NOT NULL, "track_id" character varying(255) NOT NULL, "track_name" character varying(255) NOT NULL, "artists" jsonb NOT NULL, "album_id" character varying(255) NOT NULL, "album_name" character varying(255) NOT NULL, "album_cover_url" character varying(2048) NOT NULL, "url" character varying(2048) NOT NULL, "preview_url" character varying(2048), "duration_ms" integer NOT NULL, "created_at" TIMESTAMP NOT NULL DEFAULT now(), "updated_at" TIMESTAMP NOT NULL DEFAULT now(), CONSTRAINT "PK_e504ce8ad2e291d3a1d8f1ea2f4" PRIMARY KEY ("id"))`);
         await queryRunner.query(`CREATE TABLE "post_tag" ("post_id" uuid NOT NULL, "tag_id" uuid NOT NULL, CONSTRAINT "PK_c6d49aa86322a6f58c39ea25a5d" PRIMARY KEY ("post_id", "tag_id"))`);
         await queryRunner.query(`CREATE INDEX "IDX_b5ec92f15aaa1e371f2662f681" ON "post_tag"  ("post_id") `);

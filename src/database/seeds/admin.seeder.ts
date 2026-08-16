@@ -5,6 +5,8 @@ import { Seeder } from 'typeorm-extension';
 import { AdminTypeOrmEntity } from '../../modules/admin/infrastructure/persistence/typeorm/admin.typeorm-entity';
 
 const TEST_ADMIN = {
+  name: 'John',
+  lastName: 'Doe',
   username: 'admin',
   email: 'admin@test.com',
   password: 'Admin123!',
@@ -27,6 +29,8 @@ export default class AdminSeeder implements Seeder {
 
     await repository.insert({
       id: randomUUID(),
+      name: TEST_ADMIN.name,
+      lastName: TEST_ADMIN.lastName,
       username: TEST_ADMIN.username,
       email: TEST_ADMIN.email,
       passwordHash,
