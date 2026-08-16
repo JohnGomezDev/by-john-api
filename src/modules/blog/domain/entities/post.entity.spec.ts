@@ -123,17 +123,34 @@ describe('Post', () => {
     expect(published.ogImageUrl).toBe('https://example.com/og.png');
   });
 
-  // publish should reject already published posts
-  it('should throw when publishing an already published post', () => {
-    const published = Post.create({
-      title: 'Hello',
-      slug: 'hello',
-      content: 'Content',
+  // publish is idempotent: already published posts keep the original publishedAt
+  it('should keep publishedAt when re-publishing an already published post', () => {
+    const firstPublishedAt = new Date('2026-01-10T10:00:00.000Z');
+    const published = new Post(
+      fixedUuid,
+      'Hello',
+      'hello',
+      'Content',
+      'Content',
+      null,
+      null,
+      null,
+      true,
+      firstPublishedAt,
+      fixedNow,
+      fixedNow,
       adminId,
       categoryId,
-    }).publish();
+    );
 
-    expect(() => published.publish()).toThrow('El post ya está publicado');
+    const later = new Date('2026-01-20T10:00:00.000Z');
+    jest.setSystemTime(later);
+
+    const result = published.publish();
+
+    expect(result.published).toBe(true);
+    expect(result.publishedAt).toEqual(firstPublishedAt);
+    expect(result.updatedAt).toEqual(later);
   });
 
   // publish should reject incomplete posts
@@ -155,11 +172,13 @@ describe('Post', () => {
       categoryId,
     );
 
-    expect(() => incomplete.publish()).toThrow('No se puede publicar un post incompleto');
+    expect(() => incomplete.publish()).toThrow(
+      'No se puede publicar un post incompleto',
+    );
   });
 
-  // unpublish should clear published state
-  it('should unpublish a post', () => {
+  // unpublish should clear published flag but preserve publishedAt
+  it('should unpublish a post without clearing publishedAt', () => {
     const published = Post.create({
       title: 'Hello',
       slug: 'hello',
@@ -171,12 +190,12 @@ describe('Post', () => {
     const draft = published.unpublish();
 
     expect(draft.published).toBe(false);
-    expect(draft.publishedAt).toBeNull();
+    expect(draft.publishedAt).toEqual(fixedNow);
     expect(draft.id).toBe(published.id);
   });
 
-  // unpublish should reject already draft posts
-  it('should throw when unpublishing an already draft post', () => {
+  // unpublish is idempotent: already draft posts stay draft
+  it('should remain draft when unpublishing an already draft post', () => {
     const draft = Post.create({
       title: 'Hello',
       slug: 'hello',
@@ -185,6 +204,35 @@ describe('Post', () => {
       categoryId,
     });
 
-    expect(() => draft.unpublish()).toThrow('El post ya está en borrador');
+    const result = draft.unpublish();
+
+    expect(result.published).toBe(false);
+    expect(result.publishedAt).toBeNull();
+  });
+
+  // update should replace provided fields and bump updatedAt
+  it('should update provided fields and bump updatedAt', () => {
+    const post = Post.create({
+      title: 'Hello',
+      slug: 'hello',
+      content: 'Content',
+      adminId,
+      categoryId,
+    });
+
+    const later = new Date('2026-01-20T10:00:00.000Z');
+    jest.setSystemTime(later);
+
+    const updated = post.update({
+      title: 'Updated',
+      slug: 'updated',
+    });
+
+    expect(updated.title).toBe('Updated');
+    expect(updated.slug).toBe('updated');
+    expect(updated.content).toBe('Content');
+    expect(updated.updatedAt).toEqual(later);
+    expect(updated.published).toBe(false);
+    expect(updated.publishedAt).toBeNull();
   });
 });

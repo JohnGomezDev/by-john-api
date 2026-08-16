@@ -1,4 +1,11 @@
 import { randomUUID } from 'node:crypto';
+import type { Category } from './category.entity';
+import type { Tag } from './tag.entity';
+
+export interface IPostAdminSummary {
+  id: string;
+  username: string;
+}
 
 export class Post {
   constructor(
@@ -16,6 +23,9 @@ export class Post {
     readonly updatedAt: Date,
     readonly adminId: string,
     readonly categoryId: string,
+    readonly tags: Tag[] = [],
+    readonly category: Category | null = null,
+    readonly adminInfo: IPostAdminSummary | null = null,
   ) {}
 
   static create(props: {
@@ -48,11 +58,11 @@ export class Post {
     );
   }
 
+  /**
+   * Idempotent: always ends as published.
+   * Sets publishedAt only on the first publish; later calls leave it unchanged.
+   */
   publish(): Post {
-    if (this.published) {
-      throw new Error('El post ya está publicado');
-    }
-
     if (!this.title || !this.content) {
       throw new Error('No se puede publicar un post incompleto');
     }
@@ -68,19 +78,22 @@ export class Post {
       this.metaDescription,
       this.ogImageUrl,
       true,
-      now,
+      this.publishedAt ?? now,
       this.createdAt,
       now,
       this.adminId,
       this.categoryId,
+      this.tags,
+      this.category,
+      this.adminInfo,
     );
   }
 
+  /**
+   * Idempotent: always ends as unpublished.
+   * Preserves publishedAt so the original publication date is never lost.
+   */
   unpublish(): Post {
-    if (!this.published) {
-      throw new Error('El post ya está en borrador');
-    }
-
     return new Post(
       this.id,
       this.title,
@@ -91,11 +104,53 @@ export class Post {
       this.metaDescription,
       this.ogImageUrl,
       false,
-      null,
+      this.publishedAt,
       this.createdAt,
       new Date(),
       this.adminId,
       this.categoryId,
+      this.tags,
+      this.category,
+      this.adminInfo,
+    );
+  }
+
+  update(props: {
+    title?: string;
+    slug?: string;
+    content?: string;
+    excerpt?: string;
+    categoryId?: string;
+    metaTitle?: string | null;
+    metaDescription?: string | null;
+    ogImageUrl?: string | null;
+  }): Post {
+    const content = props.content ?? this.content;
+    return new Post(
+      this.id,
+      props.title ?? this.title,
+      props.slug ?? this.slug,
+      content,
+      props.excerpt ??
+        (props.content !== undefined
+          ? Post.buildExcerpt(content)
+          : this.excerpt),
+      props.metaTitle !== undefined ? props.metaTitle : this.metaTitle,
+      props.metaDescription !== undefined
+        ? props.metaDescription
+        : this.metaDescription,
+      props.ogImageUrl !== undefined ? props.ogImageUrl : this.ogImageUrl,
+      this.published,
+      this.publishedAt,
+      this.createdAt,
+      new Date(),
+      this.adminId,
+      props.categoryId ?? this.categoryId,
+      this.tags,
+      props.categoryId !== undefined && props.categoryId !== this.categoryId
+        ? null
+        : this.category,
+      this.adminInfo,
     );
   }
 
