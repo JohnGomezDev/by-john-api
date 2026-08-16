@@ -4,7 +4,8 @@ import type { Tag } from './tag.entity';
 
 export interface IPostAdminSummary {
   id: string;
-  username: string;
+  name: string;
+  lastName: string;
 }
 
 export class Post {

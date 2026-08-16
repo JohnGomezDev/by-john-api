@@ -127,7 +127,11 @@ export class PostRepositoryImpl implements IPostRepository {
       : null;
 
     const adminInfo = e.admin
-      ? { id: e.admin.id, username: e.admin.username }
+      ? {
+          id: e.admin.id,
+          name: e.admin.name,
+          lastName: e.admin.lastName,
+        }
       : null;
 
     return new Post(

@@ -1,5 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import type { Post } from '../../../../domain/entities/post.entity';
+import { AdminSummaryDto } from './admin-summary.dto';
 import { CategoryDto } from './category.dto';
 import { TagDto } from './tag.dto';
 
@@ -59,6 +60,13 @@ export class PostDetailResponseDto {
   })
   category: CategoryDto | null;
 
+  @ApiPropertyOptional({
+    description: 'Administrador autor del post',
+    type: AdminSummaryDto,
+    nullable: true,
+  })
+  admin: AdminSummaryDto | null;
+
   @ApiProperty({ description: 'Tags del post', type: [TagDto] })
   tags: TagDto[];
 
@@ -78,6 +86,9 @@ export class PostDetailResponseDto {
     dto.updatedAt = post.updatedAt;
     dto.category = post.category
       ? CategoryDto.fromDomain(post.category)
+      : null;
+    dto.admin = post.adminInfo
+      ? AdminSummaryDto.fromSummary(post.adminInfo)
       : null;
     dto.tags = post.tags.map(TagDto.fromDomain);
     return dto;
