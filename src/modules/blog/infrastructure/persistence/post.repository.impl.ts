@@ -10,6 +10,7 @@ import { Post } from '../../domain/entities/post.entity';
 import { Tag } from '../../domain/entities/tag.entity';
 import type {
   IPostPaginateOptions,
+  IPostPublishedPaginateOptions,
   IPostRepository,
 } from '../../domain/repositories/post.repository.interface';
 import { PostTypeOrmEntity } from './typeorm/post.typeorm-entity';
@@ -72,6 +73,40 @@ export class PostRepositoryImpl implements IPostRepository {
       .leftJoinAndSelect('post.admin', 'admin')
       .where('post.admin_id = :adminId', { adminId })
       .orderBy('post.published_at', 'DESC', 'NULLS LAST');
+
+    if (options.search?.trim()) {
+      qb.andWhere(
+        "post.search_vector @@ plainto_tsquery('spanish', :search)",
+        { search: options.search.trim() },
+      );
+    }
+
+    const result = await paginate<PostTypeOrmEntity>(qb, {
+      page: options.page,
+      limit: options.limit,
+    });
+
+    return {
+      ...result,
+      items: result.items.map((item) => this.toDomain(item)),
+    };
+  }
+
+  async findPublishedPaginated(
+    options: IPostPublishedPaginateOptions,
+  ): Promise<Pagination<Post>> {
+    const qb = this.ormRepo
+      .createQueryBuilder('post')
+      .leftJoinAndSelect('post.category', 'category')
+      .leftJoinAndSelect('post.admin', 'admin')
+      .where('post.published = :published', { published: true })
+      .orderBy('post.published_at', 'DESC');
+
+    if (options.categoryId) {
+      qb.andWhere('post.category_id = :categoryId', {
+        categoryId: options.categoryId,
+      });
+    }
 
     if (options.search?.trim()) {
       qb.andWhere(

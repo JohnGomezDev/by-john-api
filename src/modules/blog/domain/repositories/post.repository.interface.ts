@@ -9,6 +9,10 @@ export interface IPostPaginateOptions {
   search?: string;
 }
 
+export interface IPostPublishedPaginateOptions extends IPostPaginateOptions {
+  categoryId?: string;
+}
+
 export interface IPostRepository {
   save(post: Post, tagIds: string[]): Promise<Post>;
   findById(id: string): Promise<Post | null>;
@@ -16,5 +20,8 @@ export interface IPostRepository {
   findPaginated(
     adminId: string,
     options: IPostPaginateOptions,
+  ): Promise<Pagination<Post>>;
+  findPublishedPaginated(
+    options: IPostPublishedPaginateOptions,
   ): Promise<Pagination<Post>>;
 }
