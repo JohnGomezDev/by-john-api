@@ -3,20 +3,20 @@ import { Test } from '@nestjs/testing';
 import { Song } from '../../../domain/entities/song.entity';
 import { SONG_REPOSITORY } from '../../../domain/repositories/song.repository.interface';
 import { SONGS_MESSAGES } from '../../constants/songs-messages.constants';
-import { GetFirstSongUseCase } from './get-first-song.use-case';
+import { GetFavoriteSongUseCase } from './get-favorite-song.use-case';
 
 interface IMockedSongRepository {
   findFirst: jest.Mock;
 }
 
-describe('GetFirstSongUseCase', () => {
-  let useCase: GetFirstSongUseCase;
+describe('GetFavoriteSongUseCase', () => {
+  let useCase: GetFavoriteSongUseCase;
   let songRepository: IMockedSongRepository;
 
   beforeEach(async () => {
     const module = await Test.createTestingModule({
       providers: [
-        GetFirstSongUseCase,
+        GetFavoriteSongUseCase,
         {
           provide: SONG_REPOSITORY,
           useValue: {
@@ -26,7 +26,7 @@ describe('GetFirstSongUseCase', () => {
       ],
     }).compile();
 
-    useCase = module.get(GetFirstSongUseCase);
+    useCase = module.get(GetFavoriteSongUseCase);
     songRepository = module.get(SONG_REPOSITORY);
   });
 

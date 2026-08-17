@@ -11,7 +11,7 @@ import {
 import { ApiResponseDto } from '../../../../common/dto/response/api-response.dto';
 import { JwtAuthGuard } from '../../../auth/infrastructure/guards/jwt-auth.guard';
 import { SONGS_MESSAGES } from '../../application/constants/songs-messages.constants';
-import { GetFirstSongUseCase } from '../../application/use-cases/get-first-song/get-first-song.use-case';
+import { GetFavoriteSongUseCase } from '../../application/use-cases/get-first-song/get-favorite-song.use-case';
 import { SaveSongUseCase } from '../../application/use-cases/save-song/save-song.use-case';
 import { SearchSongsUseCase } from '../../application/use-cases/search-songs/search-songs.use-case';
 import { SearchSongsRequestDto } from './dtos/request/search-songs.request.dto';
@@ -25,7 +25,7 @@ export class SongsController {
   constructor(
     private readonly searchSongsUseCase: SearchSongsUseCase,
     private readonly saveSongUseCase: SaveSongUseCase,
-    private readonly getFirstSongUseCase: GetFirstSongUseCase,
+    private readonly getFavoriteSongUseCase: GetFavoriteSongUseCase,
   ) {}
 
   @ApiOperation({
@@ -53,7 +53,7 @@ export class SongsController {
   }
 
   @ApiOperation({
-    summary: 'Guardar canción en la base de datos',
+    summary: 'Guardar canción favorita en la base de datos',
     description:
       'Obtiene los datos de una canción desde Deezer y la persiste. Requiere autenticación.',
   })
@@ -66,7 +66,7 @@ export class SongsController {
   @ApiNotFoundResponse({ description: 'Canción no encontrada en Deezer' })
   @ApiUnauthorizedResponse({ description: 'No autenticado' })
   @UseGuards(JwtAuthGuard)
-  @Post('tracks')
+  @Post('favorite')
   async saveSong(
     @Body() dto: SaveSongRequestDto,
   ): Promise<ApiResponseDto<SongResponseDto>> {
@@ -79,18 +79,18 @@ export class SongsController {
   }
 
   @ApiOperation({
-    summary: 'Obtener la primera canción guardada',
+    summary: 'Obtener la canción favorita guardada',
     description:
-      'Retorna la primera canción almacenada en la base de datos. Endpoint público.',
+      'Retorna la canción favorita almacenada en la base de datos. Endpoint público.',
   })
   @ApiOkResponse({
     description: 'Canción obtenida con éxito',
     type: SongResponseDto,
   })
   @ApiNotFoundResponse({ description: 'No hay ninguna canción guardada' })
-  @Get('tracks/first')
-  async getFirstSong(): Promise<ApiResponseDto<SongResponseDto>> {
-    const song = await this.getFirstSongUseCase.execute();
+  @Get('favorite')
+  async getFavoriteSong(): Promise<ApiResponseDto<SongResponseDto>> {
+    const song = await this.getFavoriteSongUseCase.execute();
 
     return ApiResponseDto.ok(
       SongResponseDto.fromDomain(song),

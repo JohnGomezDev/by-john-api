@@ -7,7 +7,7 @@ import {
 import { SONGS_MESSAGES } from '../../constants/songs-messages.constants';
 
 @Injectable()
-export class GetFirstSongUseCase {
+export class GetFavoriteSongUseCase {
   constructor(
     @Inject(SONG_REPOSITORY)
     private readonly songRepository: ISongRepository,

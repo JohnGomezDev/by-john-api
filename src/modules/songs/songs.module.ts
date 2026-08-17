@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { GetFirstSongUseCase } from './application/use-cases/get-first-song/get-first-song.use-case';
+import { GetFavoriteSongUseCase } from './application/use-cases/get-first-song/get-favorite-song.use-case';
 import { SaveSongUseCase } from './application/use-cases/save-song/save-song.use-case';
 import { SearchSongsUseCase } from './application/use-cases/search-songs/search-songs.use-case';
 import { SONG_REPOSITORY } from './domain/repositories/song.repository.interface';
@@ -18,7 +18,7 @@ import { SongTypeOrmEntity } from './infrastructure/persistence/typeorm/song.typ
     },
     SearchSongsUseCase,
     SaveSongUseCase,
-    GetFirstSongUseCase,
+    GetFavoriteSongUseCase,
   ],
 })
 export class SongsModule {}
