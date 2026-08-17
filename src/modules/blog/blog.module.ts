@@ -4,6 +4,8 @@ import { AdminCreatePostUseCase } from './application/use-cases/admin-create-pos
 import { AdminDeletePostUseCase } from './application/use-cases/admin-delete-post/admin-delete-post.use-case';
 import { AdminGetPostUseCase } from './application/use-cases/admin-get-post/admin-get-post.use-case';
 import { AdminListPostsUseCase } from './application/use-cases/admin-list-posts/admin-list-posts.use-case';
+import { AdminPublishPostUseCase } from './application/use-cases/admin-publish-post/admin-publish-post.use-case';
+import { AdminUnpublishPostUseCase } from './application/use-cases/admin-unpublish-post/admin-unpublish-post.use-case';
 import { AdminUpdatePostUseCase } from './application/use-cases/admin-update-post/admin-update-post.use-case';
 import { POST_REPOSITORY } from './domain/repositories/post.repository.interface';
 import { AdminPostController } from './infrastructure/http/admin-post.controller';
@@ -31,6 +33,8 @@ import { TagTypeOrmEntity } from './infrastructure/persistence/typeorm/tag.typeo
     AdminGetPostUseCase,
     AdminUpdatePostUseCase,
     AdminDeletePostUseCase,
+    AdminPublishPostUseCase,
+    AdminUnpublishPostUseCase,
   ],
   exports: [TypeOrmModule, POST_REPOSITORY],
 })

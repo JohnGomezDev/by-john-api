@@ -32,6 +32,8 @@ import { AdminCreatePostUseCase } from '../../application/use-cases/admin-create
 import { AdminDeletePostUseCase } from '../../application/use-cases/admin-delete-post/admin-delete-post.use-case';
 import { AdminGetPostUseCase } from '../../application/use-cases/admin-get-post/admin-get-post.use-case';
 import { AdminListPostsUseCase } from '../../application/use-cases/admin-list-posts/admin-list-posts.use-case';
+import { AdminPublishPostUseCase } from '../../application/use-cases/admin-publish-post/admin-publish-post.use-case';
+import { AdminUnpublishPostUseCase } from '../../application/use-cases/admin-unpublish-post/admin-unpublish-post.use-case';
 import { AdminUpdatePostUseCase } from '../../application/use-cases/admin-update-post/admin-update-post.use-case';
 import { CurrentUser } from '../../../auth/infrastructure/decorators/current-user.decorator';
 import type { ICurrentUser } from '../../../auth/infrastructure/passport/jwt.strategy';
@@ -54,6 +56,8 @@ export class AdminPostController {
     private readonly adminGetPostUseCase: AdminGetPostUseCase,
     private readonly adminUpdatePostUseCase: AdminUpdatePostUseCase,
     private readonly adminDeletePostUseCase: AdminDeletePostUseCase,
+    private readonly adminPublishPostUseCase: AdminPublishPostUseCase,
+    private readonly adminUnpublishPostUseCase: AdminUnpublishPostUseCase,
   ) {}
 
   @ApiOperation({
@@ -183,5 +187,56 @@ export class AdminPostController {
   ): Promise<ApiResponseDto<null>> {
     await this.adminDeletePostUseCase.execute(id, user.id);
     return ApiResponseDto.ok(null, 'Post eliminado exitosamente');
+  }
+
+  @ApiOperation({
+    summary: 'Publicar un post',
+    description:
+      'Publica un post de forma idempotente. La fecha de publicación solo se setea la primera vez.',
+  })
+  @ApiParam({ name: 'id', description: 'UUID del post', format: 'uuid' })
+  @ApiOkResponse({
+    description: 'Post publicado exitosamente',
+    type: PostDetailResponseDto,
+  })
+  @ApiBadRequestResponse({ description: 'El post está incompleto' })
+  @ApiNotFoundResponse({ description: 'Post no encontrado' })
+  @ApiForbiddenResponse({ description: 'El post no pertenece al usuario' })
+  @ApiUnauthorizedResponse({ description: 'No autenticado' })
+  @Patch(':id/publish')
+  async publish(
+    @Param('id', ParseUUIDPipe) id: string,
+    @CurrentUser() user: ICurrentUser,
+  ): Promise<ApiResponseDto<PostDetailResponseDto>> {
+    const post = await this.adminPublishPostUseCase.execute(id, user.id);
+    return ApiResponseDto.ok(
+      PostDetailResponseDto.fromDomain(post),
+      'Post publicado exitosamente',
+    );
+  }
+
+  @ApiOperation({
+    summary: 'Despublicar un post',
+    description:
+      'Despublica un post de forma idempotente. Conserva la fecha de publicación original.',
+  })
+  @ApiParam({ name: 'id', description: 'UUID del post', format: 'uuid' })
+  @ApiOkResponse({
+    description: 'Post despublicado exitosamente',
+    type: PostDetailResponseDto,
+  })
+  @ApiNotFoundResponse({ description: 'Post no encontrado' })
+  @ApiForbiddenResponse({ description: 'El post no pertenece al usuario' })
+  @ApiUnauthorizedResponse({ description: 'No autenticado' })
+  @Patch(':id/unpublish')
+  async unpublish(
+    @Param('id', ParseUUIDPipe) id: string,
+    @CurrentUser() user: ICurrentUser,
+  ): Promise<ApiResponseDto<PostDetailResponseDto>> {
+    const post = await this.adminUnpublishPostUseCase.execute(id, user.id);
+    return ApiResponseDto.ok(
+      PostDetailResponseDto.fromDomain(post),
+      'Post despublicado exitosamente',
+    );
   }
 }
