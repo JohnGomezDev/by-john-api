@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   HttpCode,
   HttpStatus,
@@ -28,6 +29,7 @@ import {
 import type { Pagination } from 'nestjs-typeorm-paginate';
 import { ApiResponseDto } from '../../../../common/dto/response/api-response.dto';
 import { AdminCreatePostUseCase } from '../../application/use-cases/admin-create-post/admin-create-post.use-case';
+import { AdminDeletePostUseCase } from '../../application/use-cases/admin-delete-post/admin-delete-post.use-case';
 import { AdminGetPostUseCase } from '../../application/use-cases/admin-get-post/admin-get-post.use-case';
 import { AdminListPostsUseCase } from '../../application/use-cases/admin-list-posts/admin-list-posts.use-case';
 import { AdminUpdatePostUseCase } from '../../application/use-cases/admin-update-post/admin-update-post.use-case';
@@ -51,6 +53,7 @@ export class AdminPostController {
     private readonly adminListPostsUseCase: AdminListPostsUseCase,
     private readonly adminGetPostUseCase: AdminGetPostUseCase,
     private readonly adminUpdatePostUseCase: AdminUpdatePostUseCase,
+    private readonly adminDeletePostUseCase: AdminDeletePostUseCase,
   ) {}
 
   @ApiOperation({
@@ -160,5 +163,25 @@ export class AdminPostController {
       PostDetailResponseDto.fromDomain(post),
       'Post actualizado exitosamente',
     );
+  }
+
+  @ApiOperation({
+    summary: 'Eliminar un post',
+    description:
+      'Elimina un post del usuario autenticado y sus relaciones en post_tag por cascade.',
+  })
+  @ApiParam({ name: 'id', description: 'UUID del post', format: 'uuid' })
+  @ApiOkResponse({ description: 'Post eliminado exitosamente' })
+  @ApiNotFoundResponse({ description: 'Post no encontrado' })
+  @ApiForbiddenResponse({ description: 'El post no pertenece al usuario' })
+  @ApiUnauthorizedResponse({ description: 'No autenticado' })
+  @HttpCode(HttpStatus.OK)
+  @Delete(':id')
+  async delete(
+    @Param('id', ParseUUIDPipe) id: string,
+    @CurrentUser() user: ICurrentUser,
+  ): Promise<ApiResponseDto<null>> {
+    await this.adminDeletePostUseCase.execute(id, user.id);
+    return ApiResponseDto.ok(null, 'Post eliminado exitosamente');
   }
 }
