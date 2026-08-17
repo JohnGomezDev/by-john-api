@@ -235,4 +235,32 @@ describe('Post', () => {
     expect(updated.published).toBe(false);
     expect(updated.publishedAt).toBeNull();
   });
+
+  // isOwnedBy should return true when the admin id matches the owner
+  it('should report owned when adminId matches', () => {
+    const post = Post.create({
+      title: 'Hello',
+      slug: 'hello',
+      content: 'Content',
+      adminId,
+      categoryId,
+    });
+
+    expect(post.isOwnedBy(adminId)).toBe(true);
+  });
+
+  // isOwnedBy should return false when the admin id does not match the owner
+  it('should report not owned when adminId does not match', () => {
+    const post = Post.create({
+      title: 'Hello',
+      slug: 'hello',
+      content: 'Content',
+      adminId,
+      categoryId,
+    });
+
+    expect(
+      post.isOwnedBy('99999999-9999-9999-9999-999999999999'),
+    ).toBe(false);
+  });
 });
