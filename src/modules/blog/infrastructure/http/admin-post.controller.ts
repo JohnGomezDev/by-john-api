@@ -6,6 +6,7 @@ import {
   HttpStatus,
   Param,
   ParseUUIDPipe,
+  Patch,
   Post,
   Query,
   UseGuards,
@@ -29,11 +30,13 @@ import { ApiResponseDto } from '../../../../common/dto/response/api-response.dto
 import { AdminCreatePostUseCase } from '../../application/use-cases/admin-create-post/admin-create-post.use-case';
 import { AdminGetPostUseCase } from '../../application/use-cases/admin-get-post/admin-get-post.use-case';
 import { AdminListPostsUseCase } from '../../application/use-cases/admin-list-posts/admin-list-posts.use-case';
+import { AdminUpdatePostUseCase } from '../../application/use-cases/admin-update-post/admin-update-post.use-case';
 import { CurrentUser } from '../../../auth/infrastructure/decorators/current-user.decorator';
 import type { ICurrentUser } from '../../../auth/infrastructure/passport/jwt.strategy';
 import { JwtAuthGuard } from '../../../auth/infrastructure/guards/jwt-auth.guard';
 import { CreatePostRequestDto } from './dtos/request/create-post.request.dto';
 import { ListPostsRequestDto } from './dtos/request/list-posts.request.dto';
+import { UpdatePostRequestDto } from './dtos/request/update-post.request.dto';
 import { PaginatedPostListDto } from './dtos/response/paginated-post-list.response.dto';
 import { PostDetailResponseDto } from './dtos/response/post-detail.response.dto';
 import { PostListItemResponseDto } from './dtos/response/post-list-item.response.dto';
@@ -47,6 +50,7 @@ export class AdminPostController {
     private readonly adminCreatePostUseCase: AdminCreatePostUseCase,
     private readonly adminListPostsUseCase: AdminListPostsUseCase,
     private readonly adminGetPostUseCase: AdminGetPostUseCase,
+    private readonly adminUpdatePostUseCase: AdminUpdatePostUseCase,
   ) {}
 
   @ApiOperation({
@@ -124,6 +128,37 @@ export class AdminPostController {
     return ApiResponseDto.ok(
       PostDetailResponseDto.fromDomain(post),
       'Post obtenido exitosamente',
+    );
+  }
+
+  @ApiOperation({
+    summary: 'Editar un post',
+    description:
+      'Actualiza los campos enviados de un post del usuario autenticado. Solo se modifican los campos presentes en el body.',
+  })
+  @ApiParam({ name: 'id', description: 'UUID del post', format: 'uuid' })
+  @ApiBody({ type: UpdatePostRequestDto })
+  @ApiOkResponse({
+    description: 'Post actualizado exitosamente',
+    type: PostDetailResponseDto,
+  })
+  @ApiBadRequestResponse({ description: 'Datos inválidos' })
+  @ApiConflictResponse({ description: 'El slug ya existe' })
+  @ApiNotFoundResponse({
+    description: 'Post no encontrado o categoría inexistente',
+  })
+  @ApiForbiddenResponse({ description: 'El post no pertenece al usuario' })
+  @ApiUnauthorizedResponse({ description: 'No autenticado' })
+  @Patch(':id')
+  async update(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: UpdatePostRequestDto,
+    @CurrentUser() user: ICurrentUser,
+  ): Promise<ApiResponseDto<PostDetailResponseDto>> {
+    const post = await this.adminUpdatePostUseCase.execute(id, dto, user.id);
+    return ApiResponseDto.ok(
+      PostDetailResponseDto.fromDomain(post),
+      'Post actualizado exitosamente',
     );
   }
 }

@@ -59,6 +59,10 @@ export class Post {
     );
   }
 
+  isOwnedBy(adminId: string): boolean {
+    return this.adminId === adminId;
+  }
+
   /**
    * Idempotent: always ends as published.
    * Sets publishedAt only on the first publish; later calls leave it unchanged.
