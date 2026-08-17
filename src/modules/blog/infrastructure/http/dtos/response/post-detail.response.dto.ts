@@ -1,8 +1,32 @@
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import {
+  ApiProperty,
+  ApiPropertyOptional,
+  OmitType,
+} from '@nestjs/swagger';
 import type { Post } from '../../../../domain/entities/post.entity';
 import { AdminSummaryDto } from './admin-summary.dto';
-import { CategoryDto } from './category.dto';
-import { TagDto } from './tag.dto';
+import { CategoryDto, PublicCategoryDto } from './category.dto';
+import { PublicTagDto, TagDto } from './tag.dto';
+
+function mapPostDetailBase(post: Post) {
+  return {
+    id: post.id,
+    title: post.title,
+    slug: post.slug,
+    content: post.content,
+    excerpt: post.excerpt,
+    metaTitle: post.metaTitle,
+    metaDescription: post.metaDescription,
+    ogImageUrl: post.ogImageUrl,
+    published: post.published,
+    publishedAt: post.publishedAt,
+    createdAt: post.createdAt,
+    updatedAt: post.updatedAt,
+    admin: post.adminInfo
+      ? AdminSummaryDto.fromSummary(post.adminInfo)
+      : null,
+  };
+}
 
 export class PostDetailResponseDto {
   @ApiProperty({ description: 'ID del post', example: 'uuid-...' })
@@ -72,25 +96,36 @@ export class PostDetailResponseDto {
 
   static fromDomain(post: Post): PostDetailResponseDto {
     const dto = new PostDetailResponseDto();
-    dto.id = post.id;
-    dto.title = post.title;
-    dto.slug = post.slug;
-    dto.content = post.content;
-    dto.excerpt = post.excerpt;
-    dto.metaTitle = post.metaTitle;
-    dto.metaDescription = post.metaDescription;
-    dto.ogImageUrl = post.ogImageUrl;
-    dto.published = post.published;
-    dto.publishedAt = post.publishedAt;
-    dto.createdAt = post.createdAt;
-    dto.updatedAt = post.updatedAt;
+    Object.assign(dto, mapPostDetailBase(post));
     dto.category = post.category
       ? CategoryDto.fromDomain(post.category)
       : null;
-    dto.admin = post.adminInfo
-      ? AdminSummaryDto.fromSummary(post.adminInfo)
-      : null;
     dto.tags = post.tags.map(TagDto.fromDomain);
+    return dto;
+  }
+}
+
+export class PublicPostDetailResponseDto extends OmitType(PostDetailResponseDto, [
+  'category',
+  'tags',
+] as const) {
+  @ApiPropertyOptional({
+    description: 'Categoría del post',
+    type: PublicCategoryDto,
+    nullable: true,
+  })
+  category: PublicCategoryDto | null;
+
+  @ApiProperty({ description: 'Tags del post', type: [PublicTagDto] })
+  tags: PublicTagDto[];
+
+  static fromDomain(post: Post): PublicPostDetailResponseDto {
+    const dto = new PublicPostDetailResponseDto();
+    Object.assign(dto, mapPostDetailBase(post));
+    dto.category = post.category
+      ? PublicCategoryDto.fromDomain(post.category)
+      : null;
+    dto.tags = post.tags.map(PublicTagDto.fromDomain);
     return dto;
   }
 }

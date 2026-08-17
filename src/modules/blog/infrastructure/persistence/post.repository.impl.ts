@@ -92,6 +92,18 @@ export class PostRepositoryImpl implements IPostRepository {
     };
   }
 
+  async findPublishedBySlug(slug: string): Promise<Post | null> {
+    const entity = await this.ormRepo.findOne({
+      where: { slug, published: true },
+      relations: {
+        tags: true,
+        category: true,
+        admin: true,
+      },
+    });
+    return entity ? this.toDomain(entity) : null;
+  }
+
   async findPublishedPaginated(
     options: IPostPublishedPaginateOptions,
   ): Promise<Pagination<Post>> {

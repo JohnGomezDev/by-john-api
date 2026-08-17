@@ -24,4 +24,5 @@ export interface IPostRepository {
   findPublishedPaginated(
     options: IPostPublishedPaginateOptions,
   ): Promise<Pagination<Post>>;
+  findPublishedBySlug(slug: string): Promise<Post | null>;
 }

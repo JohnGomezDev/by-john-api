@@ -4,6 +4,7 @@ import { AdminCreatePostUseCase } from './application/use-cases/admin-create-pos
 import { AdminDeletePostUseCase } from './application/use-cases/admin-delete-post/admin-delete-post.use-case';
 import { AdminGetPostUseCase } from './application/use-cases/admin-get-post/admin-get-post.use-case';
 import { AdminListPostsUseCase } from './application/use-cases/admin-list-posts/admin-list-posts.use-case';
+import { GetPostBySlugUseCase } from './application/use-cases/get-post-by-slug/get-post-by-slug.use-case';
 import { ListPostsUseCase } from './application/use-cases/list-posts/list-posts.use-case';
 import { AdminPublishPostUseCase } from './application/use-cases/admin-publish-post/admin-publish-post.use-case';
 import { AdminUnpublishPostUseCase } from './application/use-cases/admin-unpublish-post/admin-unpublish-post.use-case';
@@ -33,6 +34,7 @@ import { TagTypeOrmEntity } from './infrastructure/persistence/typeorm/tag.typeo
     AdminCreatePostUseCase,
     AdminListPostsUseCase,
     ListPostsUseCase,
+    GetPostBySlugUseCase,
     AdminGetPostUseCase,
     AdminUpdatePostUseCase,
     AdminDeletePostUseCase,
