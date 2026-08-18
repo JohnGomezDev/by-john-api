@@ -61,7 +61,7 @@ describe('ListPostsUseCase', () => {
       page: 1,
       limit: 10,
       search: undefined,
-      categoryId: undefined,
+      categorySlug: undefined,
     });
     expect(result).toBe(paginatedResult);
   });
@@ -76,21 +76,21 @@ describe('ListPostsUseCase', () => {
       page: 2,
       limit: 20,
       search: 'nestjs',
-      categoryId: undefined,
+      categorySlug: undefined,
     });
   });
 
   // Category filter should be forwarded to the repository
-  it('should call findPublishedPaginated with the provided categoryId', async () => {
+  it('should call findPublishedPaginated with the provided categorySlug', async () => {
     postRepository.findPublishedPaginated.mockResolvedValue(paginatedResult);
 
-    await useCase.execute({ categoryId });
+    await useCase.execute({ categorySlug: 'backend' });
 
     expect(postRepository.findPublishedPaginated).toHaveBeenCalledWith({
       page: 1,
       limit: 10,
       search: undefined,
-      categoryId,
+      categorySlug: 'backend',
     });
   });
 

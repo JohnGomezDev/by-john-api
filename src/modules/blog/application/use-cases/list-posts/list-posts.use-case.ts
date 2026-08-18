@@ -10,7 +10,7 @@ export interface IListPostsDto {
   page?: number;
   limit?: number;
   search?: string;
-  categoryId?: string;
+  categorySlug?: string;
 }
 
 @Injectable()
@@ -25,7 +25,7 @@ export class ListPostsUseCase {
       page: dto.page ?? 1,
       limit: dto.limit ?? 10,
       search: dto.search,
-      categoryId: dto.categoryId,
+      categorySlug: dto.categorySlug,
     });
   }
 }

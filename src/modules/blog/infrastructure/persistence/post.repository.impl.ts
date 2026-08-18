@@ -114,9 +114,9 @@ export class PostRepositoryImpl implements IPostRepository {
       .where('post.published = :published', { published: true })
       .orderBy('post.published_at', 'DESC');
 
-    if (options.categoryId) {
-      qb.andWhere('post.category_id = :categoryId', {
-        categoryId: options.categoryId,
+    if (options.categorySlug?.trim()) {
+      qb.andWhere('category.slug = :categorySlug', {
+        categorySlug: options.categorySlug.trim(),
       });
     }
 

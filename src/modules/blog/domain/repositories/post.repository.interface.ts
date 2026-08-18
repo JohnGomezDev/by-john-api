@@ -10,7 +10,7 @@ export interface IPostPaginateOptions {
 }
 
 export interface IPostPublishedPaginateOptions extends IPostPaginateOptions {
-  categoryId?: string;
+  categorySlug?: string;
 }
 
 export interface IPostRepository {

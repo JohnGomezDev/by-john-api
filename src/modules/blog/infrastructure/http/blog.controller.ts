@@ -33,7 +33,7 @@ export class BlogController {
   @ApiOperation({
     summary: 'Listar posts publicados',
     description:
-      'Retorna los posts publicados, paginados por fecha de publicación descendente. Soporta búsqueda full-text y filtro por categoría. Endpoint público.',
+      'Retorna los posts publicados, paginados por fecha de publicación descendente. Soporta búsqueda full-text y filtro por slug de categoría. Endpoint público.',
   })
   @ApiOkResponse({
     description: 'Listado de posts obtenido exitosamente',

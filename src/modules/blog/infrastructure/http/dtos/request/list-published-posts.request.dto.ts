@@ -1,6 +1,6 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
-import { IsInt, IsOptional, IsString, IsUUID, Max, Min } from 'class-validator';
+import { IsInt, IsOptional, IsString, Max, Min } from 'class-validator';
 
 export class ListPublishedPostsRequestDto {
   @ApiPropertyOptional({
@@ -38,10 +38,10 @@ export class ListPublishedPostsRequestDto {
   search?: string;
 
   @ApiPropertyOptional({
-    description: 'ID de la categoría para filtrar los posts',
-    example: '88888888-8888-8888-8888-888888888888',
+    description: 'Slug de la categoría para filtrar los posts',
+    example: 'backend',
   })
   @IsOptional()
-  @IsUUID('4', { message: 'El categoryId debe ser un UUID válido' })
-  categoryId?: string;
+  @IsString()
+  categorySlug?: string;
 }
