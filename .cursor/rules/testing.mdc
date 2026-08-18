@@ -87,32 +87,143 @@ describe('CreatePostUseCase', () => {
 });
 ```
 
-## e2e tests
+## e2e tests (canonical)
 
-Same discipline: one behavior per `it`, comment above each case, fresh app in `beforeEach` / close in `afterEach`.
-Use `supertest` against the full NestJS app and a dedicated test database — never production or development data.
+Location: `test/<feature>.e2e-spec.ts`. Use `supertest` against the full NestJS app and a **dedicated test database** — never production or development data.
+
+Same discipline as unit tests: one behavior per `it`, a one-line comment above each case.
+
+### Lifecycle
+
+1. Usa **`beforeAll`** para bootstrapping global de la app — solo una vez por suite e2e, nunca con `beforeEach`. Esto asegura performance y consistencia en los tests integrales. Replica los globals de `main.ts` para que la superficie HTTP coincida con producción: `setGlobalPrefix('api')`, `ValidationPipe` (`whitelist`, `forbidNonWhitelisted`, `transform`), y registra filtros globales como `AllExceptionsFilter`. Usa `cookieParser` en el flujo solo cuando los tests lo requieren (autenticación, sesiones, etc).
+2. Usa **`beforeEach`** solo para restaurar/limpiar estado entre casos, si es necesario (por ejemplo, limpiar mocks, reiniciar datos específicos, o reinicializar fixtures pequeños). Nunca para reiniciar toda la app.
+2. **Fixtures** — resolve the TypeORM entity with `getRepositoryToken(SomeTypeOrmEntity)` (never the domain entity). Delete existing rows by unique key, then insert the test records. Prefer the public HTTP create endpoint when it exists; otherwise `repository.insert` / `save`. This keeps re-runs idempotent if a previous suite left data behind.
+3. **`afterAll`** — delete the same fixtures, then `await app.close()` to close the DB connection.
+
+### `it` structure (mandatory)
+
+Every case is `async`. Capture the HTTP call in `const response`, then assert on `response.status` and `response.body`. Never chain `.expect()` as the assertion style and never inspect the request without assigning `response`.
 
 ```typescript
-// test/blog.e2e-spec.ts
-describe('Blog (e2e)', () => {
-  let app: INestApplication;
+const response = await request(app.getHttpServer())
+  .post('/api/auth/login')
+  .send(credentials);
 
-  beforeEach(async () => {
-    const module = await Test.createTestingModule({ imports: [AppModule] }).compile();
-    app = module.createNestApplication();
+expect(response.status).toBe(401);
+expect(response.body.message).toEqual('…');
+```
+
+For class-validator 400s, collect the expected messages and `forEach` with `toContain`. For success bodies, compare with `toEqual` and `expect.any(Type)` for generated fields.
+
+```typescript
+// test/auth-login.e2e-spec.ts
+import { Test, TestingModule } from '@nestjs/testing';
+import { INestApplication, ValidationPipe } from '@nestjs/common';
+import { AppModule } from '../src/app.module';
+import { Repository } from 'typeorm';
+import { getRepositoryToken } from '@nestjs/typeorm';
+import request from 'supertest';
+import cookieParser from 'cookie-parser';
+import { AllExceptionsFilter } from '../src/common/filters/all-exceptions.filter';
+import { AdminTypeOrmEntity } from '../src/modules/admin/infrastructure/persistence/typeorm/admin.typeorm-entity';
+
+const testingAdmin = {
+  username: 'test.admin',
+  password: 'Abc123',
+  email: 'test.admin@email.com',
+  name: 'Test',
+  lastName: 'Admin',
+};
+
+describe('Auth login (e2e)', () => {
+  let app: INestApplication;
+  let adminRepository: Repository<AdminTypeOrmEntity>;
+
+  beforeAll(async () => {
+    const moduleFixture: TestingModule = await Test.createTestingModule({
+      imports: [AppModule],
+    }).compile();
+
+    app = moduleFixture.createNestApplication();
+    app.setGlobalPrefix('api');
+    app.use(cookieParser());
+    app.useGlobalPipes(
+      new ValidationPipe({
+        whitelist: true,
+        forbidNonWhitelisted: true,
+        transform: true,
+        transformOptions: { enableImplicitConversion: true },
+      }),
+    );
+    app.useGlobalFilters(new AllExceptionsFilter());
     await app.init();
+
+    adminRepository = app.get<Repository<AdminTypeOrmEntity>>(
+      getRepositoryToken(AdminTypeOrmEntity),
+    );
+
+    await adminRepository.delete({ username: testingAdmin.username });
+    // Seed via HTTP when a create endpoint exists; otherwise repository insert/save.
+    await request(app.getHttpServer()).post('/api/admins').send(testingAdmin);
   });
 
-  afterEach(async () => {
+  afterAll(async () => {
+    await adminRepository.delete({ username: testingAdmin.username });
     await app.close();
   });
 
-  // Creating a post should return 201
-  it('POST /api/blog/posts → 201', () => {
-    return request(app.getHttpServer())
-      .post('/api/blog/posts')
-      .send({ title: 'Hello', content: 'World' })
-      .expect(201);
+  // Login without a body should return 400
+  it('POST /api/auth/login should throw if no body', async () => {
+    const response = await request(app.getHttpServer()).post('/api/auth/login');
+
+    const errorMessages = [
+      'username must be a string',
+      'password must be a string',
+    ];
+
+    expect(response.status).toBe(400);
+    errorMessages.forEach((message) => {
+      expect(response.body.message).toContain(message);
+    });
+  });
+
+  // Login with a wrong username should return 401
+  it('POST /api/auth/login should throw if wrong username', async () => {
+    const credentials = { username: 'missing.admin', password: 'Password1' };
+
+    const response = await request(app.getHttpServer())
+      .post('/api/auth/login')
+      .send(credentials);
+
+    expect(response.status).toBe(401);
+    expect(response.body.message).toEqual('Usuario o contraseña incorrectos');
+  });
+
+  // Successful login should return the wrapped payload
+  it('POST /api/auth/login should login successfully', async () => {
+    const credentials = {
+      username: testingAdmin.username,
+      password: testingAdmin.password,
+    };
+
+    const response = await request(app.getHttpServer())
+      .post('/api/auth/login')
+      .send(credentials);
+
+    expect(response.status).toBe(201);
+    expect(response.body).toEqual({
+      status: 'ok',
+      message: expect.any(String),
+      data: {
+        accessToken: expect.any(String),
+        admin: {
+          id: expect.any(String),
+          username: credentials.username,
+          name: testingAdmin.name,
+          lastName: testingAdmin.lastName,
+        },
+      },
+    });
   });
 });
 ```
