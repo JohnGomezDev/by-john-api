@@ -10,7 +10,7 @@ alwaysApply: false
 
 - Framework: **Jest** for both unit tests and e2e tests.
 - **No minimum coverage is enforced.**
-- **Never create tests automatically or proactively.** Only write tests when the user explicitly requests them, specifying which use case or endpoint to test.
+- **Never create tests automatically or proactively.** Only write tests when the user explicitly requests them, specifying which use case or endpoint to test. For e2e, always ask first whether to create one file per endpoint or group related endpoints before writing any file.
 
 ## Unit test structure (canonical)
 
@@ -89,16 +89,33 @@ describe('CreatePostUseCase', () => {
 
 ## e2e tests (canonical)
 
-Location: `test/<feature>.e2e-spec.ts`. Use `supertest` against the full NestJS app and a **dedicated test database** — never production or development data.
+Use `supertest` against the full NestJS app and a **dedicated test database** — never production or development data.
 
 Same discipline as unit tests: one behavior per `it`, a one-line comment above each case.
 
+### File location
+
+e2e specs live under `test/`, inside a folder named after the Nest module they belong to (same kebab-case name as `src/modules/<module-name>`):
+
+`test/<module-name>/<file-name>.e2e-spec.ts`
+
+Never place e2e specs in `src/` or as a flat file directly in `test/`.
+
+Files may be **one per endpoint** or **grouped** when endpoints belong to the same feature or share fixtures/setup (e.g. auth login + refresh + logout). Naming:
+
+| Split | Path |
+|---|---|
+| One endpoint | `test/auth/login.e2e-spec.ts` |
+| Same feature grouped | `test/auth/auth.e2e-spec.ts` or `test/blog/posts.e2e-spec.ts` |
+
+**Before creating any e2e file, always ask the user** whether to split one file per endpoint or group them. Propose a recommended grouping (same feature, shared fixtures, related HTTP flow) and wait for the answer. Do not invent the split on your own.
+
 ### Lifecycle
 
-1. Usa **`beforeAll`** para bootstrapping global de la app — solo una vez por suite e2e, nunca con `beforeEach`. Esto asegura performance y consistencia en los tests integrales. Replica los globals de `main.ts` para que la superficie HTTP coincida con producción: `setGlobalPrefix('api')`, `ValidationPipe` (`whitelist`, `forbidNonWhitelisted`, `transform`), y registra filtros globales como `AllExceptionsFilter`. Usa `cookieParser` en el flujo solo cuando los tests lo requieren (autenticación, sesiones, etc).
-2. Usa **`beforeEach`** solo para restaurar/limpiar estado entre casos, si es necesario (por ejemplo, limpiar mocks, reiniciar datos específicos, o reinicializar fixtures pequeños). Nunca para reiniciar toda la app.
-2. **Fixtures** — resolve the TypeORM entity with `getRepositoryToken(SomeTypeOrmEntity)` (never the domain entity). Delete existing rows by unique key, then insert the test records. Prefer the public HTTP create endpoint when it exists; otherwise `repository.insert` / `save`. This keeps re-runs idempotent if a previous suite left data behind.
-3. **`afterAll`** — delete the same fixtures, then `await app.close()` to close the DB connection.
+1. **`beforeAll`** — bootstrap the app once per e2e suite, never with `beforeEach`. This keeps the suite fast and consistent. Replicate `main.ts` globals so the HTTP surface matches production: `setGlobalPrefix('api')`, `ValidationPipe` (`whitelist`, `forbidNonWhitelisted`, `transform`), and register global filters such as `AllExceptionsFilter`. Use `cookieParser` only when the flow needs cookies (auth, sessions).
+2. **`beforeEach`** — restore or clean state between cases if needed (reset mocks, reset specific data, re-seed small fixtures). Never restart the whole app.
+3. **Fixtures** — resolve the TypeORM entity with `getRepositoryToken(SomeTypeOrmEntity)` (never the domain entity). Delete existing rows by unique key, then insert the test records. Prefer the public HTTP create endpoint when it exists; otherwise `repository.insert` / `save`. This keeps re-runs idempotent if a previous suite left data behind.
+4. **`afterAll`** — delete the same fixtures, then `await app.close()` to close the DB connection.
 
 ### `it` structure (mandatory)
 
@@ -116,16 +133,16 @@ expect(response.body.message).toEqual('…');
 For class-validator 400s, collect the expected messages and `forEach` with `toContain`. For success bodies, compare with `toEqual` and `expect.any(Type)` for generated fields.
 
 ```typescript
-// test/auth-login.e2e-spec.ts
+// test/auth/login.e2e-spec.ts
 import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication, ValidationPipe } from '@nestjs/common';
-import { AppModule } from '../src/app.module';
+import { AppModule } from '../../src/app.module';
 import { Repository } from 'typeorm';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import request from 'supertest';
 import cookieParser from 'cookie-parser';
-import { AllExceptionsFilter } from '../src/common/filters/all-exceptions.filter';
-import { AdminTypeOrmEntity } from '../src/modules/admin/infrastructure/persistence/typeorm/admin.typeorm-entity';
+import { AllExceptionsFilter } from '../../src/common/filters/all-exceptions.filter';
+import { AdminTypeOrmEntity } from '../../src/modules/admin/infrastructure/persistence/typeorm/admin.typeorm-entity';
 
 const testingAdmin = {
   username: 'test.admin',
