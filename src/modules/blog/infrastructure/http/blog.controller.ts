@@ -90,9 +90,7 @@ export class BlogController {
     type: [CategoryDto],
   })
   @Get('categories')
-  async listCategories(): Promise<
-    ApiResponseDto<CategoryDto[]>
-  > {
+  async listCategories(): Promise<ApiResponseDto<CategoryDto[]>> {
     const categories = await this.listCategoriesUseCase.execute();
     return ApiResponseDto.ok(
       categories.map(CategoryDto.fromDomain),

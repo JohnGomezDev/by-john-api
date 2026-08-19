@@ -51,9 +51,7 @@ export class PostListItemResponseDto {
     dto.published = post.published;
     dto.publishedAt = post.publishedAt;
     dto.updatedAt = post.updatedAt;
-    dto.category = post.category
-      ? CategoryDto.fromDomain(post.category)
-      : null;
+    dto.category = post.category ? CategoryDto.fromDomain(post.category) : null;
     dto.admin = post.adminInfo
       ? AdminSummaryDto.fromSummary(post.adminInfo)
       : null;

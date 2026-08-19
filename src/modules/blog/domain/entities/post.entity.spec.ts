@@ -259,8 +259,6 @@ describe('Post', () => {
       categoryId,
     });
 
-    expect(
-      post.isOwnedBy('99999999-9999-9999-9999-999999999999'),
-    ).toBe(false);
+    expect(post.isOwnedBy('99999999-9999-9999-9999-999999999999')).toBe(false);
   });
 });

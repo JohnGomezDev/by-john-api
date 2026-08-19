@@ -24,7 +24,8 @@ export class DeezerSearchAlbumResponseDto {
 
   @ApiProperty({
     description: 'URL de la portada del álbum (250x250)',
-    example: 'https://cdns-images.dzcdn.net/images/cover/.../250x250-000000-80-0-0.jpg',
+    example:
+      'https://cdns-images.dzcdn.net/images/cover/.../250x250-000000-80-0-0.jpg',
   })
   cover: string;
 }
@@ -64,7 +65,9 @@ export class DeezerSearchSongItemResponseDto {
   @ApiProperty({ description: 'Duración del track en segundos', example: 326 })
   duration: number;
 
-  static fromDeezer(item: IDeezerSearchSongItem): DeezerSearchSongItemResponseDto {
+  static fromDeezer(
+    item: IDeezerSearchSongItem,
+  ): DeezerSearchSongItemResponseDto {
     const dto = new DeezerSearchSongItemResponseDto();
     dto.id = item.id;
     dto.title = item.title;

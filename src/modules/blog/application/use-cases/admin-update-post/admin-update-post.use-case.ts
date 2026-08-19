@@ -42,9 +42,7 @@ export class AdminUpdatePostUseCase {
     }
 
     if (!post.isOwnedBy(adminId)) {
-      throw new ForbiddenException(
-        'No tienes permiso para editar este post',
-      );
+      throw new ForbiddenException('No tienes permiso para editar este post');
     }
 
     const updated = post.update({

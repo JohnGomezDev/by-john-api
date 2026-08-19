@@ -1,8 +1,4 @@
-import {
-  Inject,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { Post } from '../../../domain/entities/post.entity';
 import {
   POST_REPOSITORY,

@@ -165,8 +165,14 @@ describe('Public blog (e2e)', () => {
     const response = await http(app).get('/api/blog/posts?page=1&limit=1');
 
     expect(response.status).toBe(200);
-    expect(body<{ items: { id: string }[] }>(response).data.items).toHaveLength(1);
-    expect(body<{ meta: { currentPage: number; itemsPerPage: number; itemCount: number } }>(response).data.meta).toEqual(
+    expect(body<{ items: { id: string }[] }>(response).data.items).toHaveLength(
+      1,
+    );
+    expect(
+      body<{
+        meta: { currentPage: number; itemsPerPage: number; itemCount: number };
+      }>(response).data.meta,
+    ).toEqual(
       containing({
         currentPage: 1,
         itemsPerPage: 1,

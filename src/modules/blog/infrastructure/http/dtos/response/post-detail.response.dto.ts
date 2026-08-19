@@ -1,8 +1,4 @@
-import {
-  ApiProperty,
-  ApiPropertyOptional,
-  OmitType,
-} from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional, OmitType } from '@nestjs/swagger';
 import type { Post } from '../../../../domain/entities/post.entity';
 import { AdminSummaryDto } from './admin-summary.dto';
 import { CategoryDto, PublicCategoryDto } from './category.dto';
@@ -22,9 +18,7 @@ function mapPostDetailBase(post: Post) {
     publishedAt: post.publishedAt,
     createdAt: post.createdAt,
     updatedAt: post.updatedAt,
-    admin: post.adminInfo
-      ? AdminSummaryDto.fromSummary(post.adminInfo)
-      : null,
+    admin: post.adminInfo ? AdminSummaryDto.fromSummary(post.adminInfo) : null,
   };
 }
 
@@ -97,18 +91,16 @@ export class PostDetailResponseDto {
   static fromDomain(post: Post): PostDetailResponseDto {
     const dto = new PostDetailResponseDto();
     Object.assign(dto, mapPostDetailBase(post));
-    dto.category = post.category
-      ? CategoryDto.fromDomain(post.category)
-      : null;
+    dto.category = post.category ? CategoryDto.fromDomain(post.category) : null;
     dto.tags = post.tags.map(TagDto.fromDomain);
     return dto;
   }
 }
 
-export class PublicPostDetailResponseDto extends OmitType(PostDetailResponseDto, [
-  'category',
-  'tags',
-] as const) {
+export class PublicPostDetailResponseDto extends OmitType(
+  PostDetailResponseDto,
+  ['category', 'tags'] as const,
+) {
   @ApiPropertyOptional({
     description: 'Categoría del post',
     type: PublicCategoryDto,

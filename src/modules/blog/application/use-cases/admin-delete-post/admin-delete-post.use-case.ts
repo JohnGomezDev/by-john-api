@@ -23,9 +23,7 @@ export class AdminDeletePostUseCase {
     }
 
     if (!post.isOwnedBy(adminId)) {
-      throw new ForbiddenException(
-        'No tienes permiso para eliminar este post',
-      );
+      throw new ForbiddenException('No tienes permiso para eliminar este post');
     }
 
     await this.postRepository.delete(id);

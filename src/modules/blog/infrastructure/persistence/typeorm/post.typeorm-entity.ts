@@ -37,17 +37,28 @@ export class PostTypeOrmEntity {
   @Column({ name: 'meta_title', type: 'varchar', length: 255, nullable: true })
   metaTitle: string | null;
 
-  @Column({ name: 'meta_description', type: 'varchar', length: 255, nullable: true })
+  @Column({
+    name: 'meta_description',
+    type: 'varchar',
+    length: 255,
+    nullable: true,
+  })
   metaDescription: string | null;
 
-  @Column({ name: 'og_image_url', type: 'varchar', length: 2048, nullable: true })
+  @Column({
+    name: 'og_image_url',
+    type: 'varchar',
+    length: 2048,
+    nullable: true,
+  })
   ogImageUrl: string | null;
 
   @Column({
     name: 'search_vector',
     type: 'tsvector',
     generatedType: 'STORED',
-    asExpression: "to_tsvector('spanish', coalesce(title, '') || ' ' || coalesce(content, ''))",
+    asExpression:
+      "to_tsvector('spanish', coalesce(title, '') || ' ' || coalesce(content, ''))",
     select: false,
   })
   searchVector?: string;

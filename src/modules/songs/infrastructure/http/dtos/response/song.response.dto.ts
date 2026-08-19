@@ -47,7 +47,8 @@ export class SongResponseDto {
 
   @ApiProperty({
     description: 'URL de la portada del álbum',
-    example: 'https://cdns-images.dzcdn.net/images/cover/.../250x250-000000-80-0-0.jpg',
+    example:
+      'https://cdns-images.dzcdn.net/images/cover/.../250x250-000000-80-0-0.jpg',
   })
   albumCoverUrl: string;
 
@@ -64,7 +65,10 @@ export class SongResponseDto {
   })
   previewUrl: string | null;
 
-  @ApiProperty({ description: 'Duración del track en milisegundos', example: 326000 })
+  @ApiProperty({
+    description: 'Duración del track en milisegundos',
+    example: 326000,
+  })
   durationMs: number;
 
   @ApiProperty({ description: 'Fecha de creación del registro' })

@@ -83,8 +83,8 @@ describe('AdminUpdatePostUseCase', () => {
   it('should update and save the post with provided fields', async () => {
     const post = buildPostWithTags();
     postRepository.findById.mockResolvedValue(post);
-    postRepository.save.mockImplementation(
-      (updated: Post, tagIds: string[]) => Promise.resolve(updated),
+    postRepository.save.mockImplementation((updated: Post, tagIds: string[]) =>
+      Promise.resolve(updated),
     );
 
     const result = await useCase.execute(
@@ -110,8 +110,8 @@ describe('AdminUpdatePostUseCase', () => {
   it('should preserve existing tag ids when tagIds are not provided', async () => {
     const post = buildPostWithTags();
     postRepository.findById.mockResolvedValue(post);
-    postRepository.save.mockImplementation(
-      (updated: Post, tagIds: string[]) => Promise.resolve(updated),
+    postRepository.save.mockImplementation((updated: Post, tagIds: string[]) =>
+      Promise.resolve(updated),
     );
 
     await useCase.execute(postId, { title: 'Updated' }, adminId);
@@ -126,8 +126,8 @@ describe('AdminUpdatePostUseCase', () => {
   it('should save with new tag ids when tagIds are provided', async () => {
     const post = buildPostWithTags();
     postRepository.findById.mockResolvedValue(post);
-    postRepository.save.mockImplementation(
-      (updated: Post, tagIds: string[]) => Promise.resolve(updated),
+    postRepository.save.mockImplementation((updated: Post, tagIds: string[]) =>
+      Promise.resolve(updated),
     );
 
     await useCase.execute(

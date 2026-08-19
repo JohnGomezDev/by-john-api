@@ -1,9 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import {
-  paginate,
-  type Pagination,
-} from 'nestjs-typeorm-paginate';
+import { paginate, type Pagination } from 'nestjs-typeorm-paginate';
 import { In, type Repository } from 'typeorm';
 import { Category } from '../../domain/entities/category.entity';
 import { Post } from '../../domain/entities/post.entity';
@@ -75,10 +72,9 @@ export class PostRepositoryImpl implements IPostRepository {
       .orderBy('post.published_at', 'DESC', 'NULLS LAST');
 
     if (options.search?.trim()) {
-      qb.andWhere(
-        "post.search_vector @@ plainto_tsquery('spanish', :search)",
-        { search: options.search.trim() },
-      );
+      qb.andWhere("post.search_vector @@ plainto_tsquery('spanish', :search)", {
+        search: options.search.trim(),
+      });
     }
 
     const result = await paginate<PostTypeOrmEntity>(qb, {
@@ -121,10 +117,9 @@ export class PostRepositoryImpl implements IPostRepository {
     }
 
     if (options.search?.trim()) {
-      qb.andWhere(
-        "post.search_vector @@ plainto_tsquery('spanish', :search)",
-        { search: options.search.trim() },
-      );
+      qb.andWhere("post.search_vector @@ plainto_tsquery('spanish', :search)", {
+        search: options.search.trim(),
+      });
     }
 
     const result = await paginate<PostTypeOrmEntity>(qb, {

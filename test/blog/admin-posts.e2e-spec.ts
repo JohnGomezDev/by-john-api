@@ -248,8 +248,14 @@ describe('Admin posts (e2e)', () => {
       .set(bearer(ownerSession.accessToken));
 
     expect(response.status).toBe(200);
-    expect(body<{ items: { id: string }[] }>(response).data.items).toHaveLength(1);
-    expect(body<{ meta: { currentPage: number; itemsPerPage: number; itemCount: number } }>(response).data.meta).toEqual(
+    expect(body<{ items: { id: string }[] }>(response).data.items).toHaveLength(
+      1,
+    );
+    expect(
+      body<{
+        meta: { currentPage: number; itemsPerPage: number; itemCount: number };
+      }>(response).data.meta,
+    ).toEqual(
       containing({
         currentPage: 1,
         itemsPerPage: 1,
@@ -463,7 +469,9 @@ describe('Admin posts (e2e)', () => {
 
     expect(response.status).toBe(200);
     expect(body<{ published: boolean }>(response).data.published).toBe(true);
-    expect(body<{ publishedAt: string }>(response).data.publishedAt).toBe(publishedAt);
+    expect(body<{ publishedAt: string }>(response).data.publishedAt).toBe(
+      publishedAt,
+    );
   });
 
   // Publishing another admin's post should be forbidden
@@ -531,7 +539,9 @@ describe('Admin posts (e2e)', () => {
     expect(response.status).toBe(200);
     expect(body<{ published: boolean }>(response).data.published).toBe(false);
     expect(
-      new Date(body<{ publishedAt: string }>(response).data.publishedAt).toISOString(),
+      new Date(
+        body<{ publishedAt: string }>(response).data.publishedAt,
+      ).toISOString(),
     ).toBe('2024-01-01T00:00:00.000Z');
   });
 
@@ -554,7 +564,9 @@ describe('Admin posts (e2e)', () => {
     expect(response.status).toBe(200);
     expect(body<{ published: boolean }>(response).data.published).toBe(false);
     expect(
-      new Date(body<{ publishedAt: string }>(response).data.publishedAt).toISOString(),
+      new Date(
+        body<{ publishedAt: string }>(response).data.publishedAt,
+      ).toISOString(),
     ).toBe('2024-02-02T00:00:00.000Z');
   });
 

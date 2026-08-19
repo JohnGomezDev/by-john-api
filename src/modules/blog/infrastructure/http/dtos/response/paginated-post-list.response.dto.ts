@@ -1,7 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import {
-  PaginatedMetaDto,
-} from '../../../../../../common/dto/response/paginated-meta.response.dto';
+import { PaginatedMetaDto } from '../../../../../../common/dto/response/paginated-meta.response.dto';
 import { PostListItemResponseDto } from './post-list-item.response.dto';
 
 export class PaginatedPostListDto {

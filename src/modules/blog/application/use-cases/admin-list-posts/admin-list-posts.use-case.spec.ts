@@ -69,10 +69,7 @@ describe('AdminListPostsUseCase', () => {
   it('should call findPaginated with provided page, limit and search', async () => {
     postRepository.findPaginated.mockResolvedValue(paginatedResult);
 
-    await useCase.execute(
-      { page: 2, limit: 20, search: 'nestjs' },
-      adminId,
-    );
+    await useCase.execute({ page: 2, limit: 20, search: 'nestjs' }, adminId);
 
     expect(postRepository.findPaginated).toHaveBeenCalledWith(adminId, {
       page: 2,

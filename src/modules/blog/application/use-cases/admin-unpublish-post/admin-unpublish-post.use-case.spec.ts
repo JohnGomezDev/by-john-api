@@ -106,8 +106,8 @@ describe('AdminUnpublishPostUseCase', () => {
       categoryId,
     });
     postRepository.findById.mockResolvedValue(draft);
-    postRepository.save.mockImplementation(
-      (post: Post, tagIds: string[]) => Promise.resolve(post),
+    postRepository.save.mockImplementation((post: Post, tagIds: string[]) =>
+      Promise.resolve(post),
     );
 
     const result = await useCase.execute(postId, adminId);

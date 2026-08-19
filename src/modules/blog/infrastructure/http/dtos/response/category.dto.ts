@@ -2,7 +2,10 @@ import { ApiProperty, PickType } from '@nestjs/swagger';
 import type { Category } from '../../../../domain/entities/category.entity';
 
 export class CategoryDto {
-  @ApiProperty({ description: 'ID de la categoría', example: 'UUID...1234567890' })
+  @ApiProperty({
+    description: 'ID de la categoría',
+    example: 'UUID...1234567890',
+  })
   id: string;
 
   @ApiProperty({ description: 'Nombre de la categoría', example: 'Backend' })

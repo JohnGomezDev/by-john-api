@@ -25,9 +25,7 @@ export class AdminPublishPostUseCase {
     }
 
     if (!post.isOwnedBy(adminId)) {
-      throw new ForbiddenException(
-        'No tienes permiso para publicar este post',
-      );
+      throw new ForbiddenException('No tienes permiso para publicar este post');
     }
 
     try {
@@ -37,7 +35,10 @@ export class AdminPublishPostUseCase {
         post.tags.map((tag) => tag.id),
       );
     } catch (error) {
-      if (error instanceof Error && error.message === 'No se puede publicar un post incompleto') {
+      if (
+        error instanceof Error &&
+        error.message === 'No se puede publicar un post incompleto'
+      ) {
         throw new BadRequestException(error.message);
       }
       throw error;

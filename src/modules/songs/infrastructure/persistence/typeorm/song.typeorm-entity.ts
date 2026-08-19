@@ -33,7 +33,12 @@ export class SongTypeOrmEntity {
   @Column({ name: 'url', type: 'varchar', length: 2048 })
   url: string;
 
-  @Column({ name: 'preview_url', type: 'varchar', length: 2048, nullable: true })
+  @Column({
+    name: 'preview_url',
+    type: 'varchar',
+    length: 2048,
+    nullable: true,
+  })
   previewUrl: string | null;
 
   @Column({ name: 'duration_ms', type: 'int' })
