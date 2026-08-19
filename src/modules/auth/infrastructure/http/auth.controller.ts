@@ -16,8 +16,10 @@ import {
   ApiOkResponse,
   ApiOperation,
   ApiTags,
+  ApiTooManyRequestsResponse,
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
+import { Throttle } from '@nestjs/throttler';
 import type { Request, Response } from 'express';
 import { ApiResponseDto } from '../../../../common/dto/response/api-response.dto';
 import { AUTH_MESSAGES } from '../../application/constants/auth-messages.constants';
@@ -57,6 +59,13 @@ export class AuthController {
     type: LoginResponseDto,
   })
   @ApiUnauthorizedResponse({ description: 'Usuario o contraseña incorrectos' })
+  @ApiTooManyRequestsResponse({
+    description: 'Demasiadas solicitudes, intenta de nuevo más tarde',
+  })
+  @Throttle({
+    medium: { limit: 5, ttl: 60_000 },
+    long: { limit: 20, ttl: 900_000 },
+  })
   @Post('login')
   async login(
     @Body() dto: LoginRequestDto,
