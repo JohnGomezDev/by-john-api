@@ -13,4 +13,14 @@ export class Category {
     const now = new Date();
     return new Category(randomUUID(), props.name, props.slug, now, now);
   }
+
+  update(props: { name?: string; slug?: string }): Category {
+    return new Category(
+      this.id,
+      props.name ?? this.name,
+      props.slug ?? this.slug,
+      this.createdAt,
+      new Date(),
+    );
+  }
 }

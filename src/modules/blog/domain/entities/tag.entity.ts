@@ -13,4 +13,14 @@ export class Tag {
     const now = new Date();
     return new Tag(randomUUID(), props.name, props.slug, now, now);
   }
+
+  update(props: { name?: string; slug?: string }): Tag {
+    return new Tag(
+      this.id,
+      props.name ?? this.name,
+      props.slug ?? this.slug,
+      this.createdAt,
+      new Date(),
+    );
+  }
 }
