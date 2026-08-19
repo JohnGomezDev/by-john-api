@@ -4,7 +4,7 @@ import { join } from 'node:path';
 import { DataSource, type DataSourceOptions } from 'typeorm';
 import type { SeederOptions } from 'typeorm-extension';
 
-config();
+config({ quiet: true });
 
 const configService = new ConfigService();
 
