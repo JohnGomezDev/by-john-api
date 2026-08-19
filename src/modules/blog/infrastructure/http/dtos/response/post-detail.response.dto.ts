@@ -92,7 +92,7 @@ export class PostDetailResponseDto {
     const dto = new PostDetailResponseDto();
     Object.assign(dto, mapPostDetailBase(post));
     dto.category = post.category ? CategoryDto.fromDomain(post.category) : null;
-    dto.tags = post.tags.map(TagDto.fromDomain);
+    dto.tags = post.tags.map((tag) => TagDto.fromDomain(tag));
     return dto;
   }
 }
@@ -117,7 +117,7 @@ export class PublicPostDetailResponseDto extends OmitType(
     dto.category = post.category
       ? PublicCategoryDto.fromDomain(post.category)
       : null;
-    dto.tags = post.tags.map(PublicTagDto.fromDomain);
+    dto.tags = post.tags.map((tag) => PublicTagDto.fromDomain(tag));
     return dto;
   }
 }

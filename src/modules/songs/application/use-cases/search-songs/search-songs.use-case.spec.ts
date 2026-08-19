@@ -25,7 +25,7 @@ describe('SearchSongsUseCase', () => {
   it('should return mapped songs from Deezer search', async () => {
     fetchMock.mockResolvedValue({
       ok: true,
-      json: async () => ({
+      json: () => ({
         data: [
           {
             id: 3135556,
@@ -90,7 +90,7 @@ describe('SearchSongsUseCase', () => {
     fetchMock.mockResolvedValue({
       ok: false,
       status: 500,
-      json: async () => ({}),
+      json: () => ({}),
     });
 
     await expect(useCase.execute('query')).rejects.toThrow(

@@ -83,7 +83,7 @@ describe('AdminUpdatePostUseCase', () => {
   it('should update and save the post with provided fields', async () => {
     const post = buildPostWithTags();
     postRepository.findById.mockResolvedValue(post);
-    postRepository.save.mockImplementation((updated: Post, tagIds: string[]) =>
+    postRepository.save.mockImplementation((updated: Post) =>
       Promise.resolve(updated),
     );
 
@@ -110,7 +110,7 @@ describe('AdminUpdatePostUseCase', () => {
   it('should preserve existing tag ids when tagIds are not provided', async () => {
     const post = buildPostWithTags();
     postRepository.findById.mockResolvedValue(post);
-    postRepository.save.mockImplementation((updated: Post, tagIds: string[]) =>
+    postRepository.save.mockImplementation((updated: Post) =>
       Promise.resolve(updated),
     );
 
@@ -126,7 +126,7 @@ describe('AdminUpdatePostUseCase', () => {
   it('should save with new tag ids when tagIds are provided', async () => {
     const post = buildPostWithTags();
     postRepository.findById.mockResolvedValue(post);
-    postRepository.save.mockImplementation((updated: Post, tagIds: string[]) =>
+    postRepository.save.mockImplementation((updated: Post) =>
       Promise.resolve(updated),
     );
 

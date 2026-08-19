@@ -50,7 +50,7 @@ describe('AdminCreatePostUseCase', () => {
 
   // A valid dto should create an unpublished post and persist it with tag ids
   it('should create and save an unpublished post', async () => {
-    postRepository.save.mockImplementation((post: Post, tagIds: string[]) =>
+    postRepository.save.mockImplementation((post: Post) =>
       Promise.resolve(post),
     );
 

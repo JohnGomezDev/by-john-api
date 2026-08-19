@@ -79,8 +79,8 @@ describe('AdminUnpublishPostUseCase', () => {
   it('should unpublish and save the post preserving publishedAt', async () => {
     const post = buildPublishedPost();
     postRepository.findById.mockResolvedValue(post);
-    postRepository.save.mockImplementation(
-      (unpublished: Post, tagIds: string[]) => Promise.resolve(unpublished),
+    postRepository.save.mockImplementation((unpublished: Post) =>
+      Promise.resolve(unpublished),
     );
 
     const result = await useCase.execute(postId, adminId);
@@ -106,7 +106,7 @@ describe('AdminUnpublishPostUseCase', () => {
       categoryId,
     });
     postRepository.findById.mockResolvedValue(draft);
-    postRepository.save.mockImplementation((post: Post, tagIds: string[]) =>
+    postRepository.save.mockImplementation((post: Post) =>
       Promise.resolve(post),
     );
 

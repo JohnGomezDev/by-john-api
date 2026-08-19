@@ -47,7 +47,9 @@ export class SongsController {
     const result = await this.searchSongsUseCase.execute(dto.query);
 
     return ApiResponseDto.ok(
-      result.songs.map(DeezerSearchSongItemResponseDto.fromDeezer),
+      result.songs.map((song) =>
+        DeezerSearchSongItemResponseDto.fromDeezer(song),
+      ),
       SONGS_MESSAGES.SEARCH_SUCCESS,
     );
   }

@@ -55,8 +55,16 @@ describe('Song', () => {
 
   // Factory should default missing previewUrl to null
   it('should default previewUrl to null when omitted', () => {
-    const { previewUrl: _previewUrl, ...propsWithoutPreview } = baseProps;
-    const song = Song.create(propsWithoutPreview);
+    const song = Song.create({
+      trackId: baseProps.trackId,
+      trackName: baseProps.trackName,
+      artists: baseProps.artists,
+      albumId: baseProps.albumId,
+      albumName: baseProps.albumName,
+      albumCoverUrl: baseProps.albumCoverUrl,
+      url: baseProps.url,
+      durationMs: baseProps.durationMs,
+    });
 
     expect(song.previewUrl).toBeNull();
   });

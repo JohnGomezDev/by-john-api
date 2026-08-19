@@ -83,8 +83,8 @@ describe('AdminPublishPostUseCase', () => {
   it('should publish and save the post with its tag ids', async () => {
     const post = buildDraftPost();
     postRepository.findById.mockResolvedValue(post);
-    postRepository.save.mockImplementation(
-      (published: Post, tagIds: string[]) => Promise.resolve(published),
+    postRepository.save.mockImplementation((published: Post) =>
+      Promise.resolve(published),
     );
 
     const result = await useCase.execute(postId, adminId);
@@ -123,7 +123,7 @@ describe('AdminPublishPostUseCase', () => {
     );
 
     postRepository.findById.mockResolvedValue(alreadyPublished);
-    postRepository.save.mockImplementation((post: Post, tagIds: string[]) =>
+    postRepository.save.mockImplementation((post: Post) =>
       Promise.resolve(post),
     );
 

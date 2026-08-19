@@ -13,14 +13,10 @@ export class GetPostBySlugUseCase {
   ) {}
 
   async execute(slug: string): Promise<Post> {
-    try {
-      const post = await this.postRepository.findPublishedBySlug(slug);
-      if (!post) {
-        throw new NotFoundException(`Post con slug ${slug} no encontrado`);
-      }
-      return post;
-    } catch (error) {
-      throw error;
+    const post = await this.postRepository.findPublishedBySlug(slug);
+    if (!post) {
+      throw new NotFoundException(`Post con slug ${slug} no encontrado`);
     }
+    return post;
   }
 }

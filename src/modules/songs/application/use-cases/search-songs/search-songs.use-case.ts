@@ -54,43 +54,39 @@ interface IDeezerSearchApiResponse {
 @Injectable()
 export class SearchSongsUseCase {
   async execute(query: string): Promise<IDeezerSearchResult> {
-    try {
-      const params = new URLSearchParams({
-        q: query,
-        limit: String(SEARCH_LIMIT),
-      });
+    const params = new URLSearchParams({
+      q: query,
+      limit: String(SEARCH_LIMIT),
+    });
 
-      const response = await fetch(`${DEEZER_SEARCH_URL}?${params}`);
+    const response = await fetch(`${DEEZER_SEARCH_URL}?${params}`);
 
-      if (!response.ok) {
-        throw new InternalServerErrorException(
-          'No se pudo realizar la búsqueda en Deezer',
-        );
-      }
-
-      const data = (await response.json()) as IDeezerSearchApiResponse;
-
-      return {
-        songs: data.data.map((item) => ({
-          id: item.id,
-          title: item.title,
-          link: item.link,
-          preview: item.preview,
-          duration: item.duration,
-          artist: {
-            id: item.artist.id,
-            name: item.artist.name,
-            link: item.artist.link,
-          },
-          album: {
-            id: item.album.id,
-            title: item.album.title,
-            cover: item.album.cover,
-          },
-        })),
-      };
-    } catch (error) {
-      throw error;
+    if (!response.ok) {
+      throw new InternalServerErrorException(
+        'No se pudo realizar la búsqueda en Deezer',
+      );
     }
+
+    const data = (await response.json()) as IDeezerSearchApiResponse;
+
+    return {
+      songs: data.data.map((item) => ({
+        id: item.id,
+        title: item.title,
+        link: item.link,
+        preview: item.preview,
+        duration: item.duration,
+        artist: {
+          id: item.artist.id,
+          name: item.artist.name,
+          link: item.artist.link,
+        },
+        album: {
+          id: item.album.id,
+          title: item.album.title,
+          cover: item.album.cover,
+        },
+      })),
+    };
   }
 }

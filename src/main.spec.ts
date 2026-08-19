@@ -78,7 +78,7 @@ describe('main', () => {
 
     await bootstrap();
 
-    expect(NestFactory.create).toHaveBeenCalledWith(AppModule);
+    expect(jest.spyOn(NestFactory, 'create')).toHaveBeenCalledWith(AppModule);
     expect(mockLogger.log).toHaveBeenCalledWith(
       `Application running on http://localhost:${port}/api`,
     );
@@ -111,7 +111,7 @@ describe('main', () => {
         validatorOptions: expect.objectContaining({
           whitelist: true,
           forbidNonWhitelisted: true,
-        }),
+        }) as Record<string, unknown>,
       }),
     );
   });
@@ -136,11 +136,11 @@ describe('main', () => {
   it('should create swagger document', async () => {
     await bootstrap();
 
-    expect(SwaggerModule.createDocument).toHaveBeenCalledWith(
+    expect(jest.spyOn(SwaggerModule, 'createDocument')).toHaveBeenCalledWith(
       mockApp,
       'doc-config',
     );
-    expect(SwaggerModule.setup).toHaveBeenCalledWith(
+    expect(jest.spyOn(SwaggerModule, 'setup')).toHaveBeenCalledWith(
       'api/docs',
       mockApp,
       'doc',

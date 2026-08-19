@@ -65,7 +65,7 @@ describe('SaveSongUseCase', () => {
     fetchMock.mockResolvedValue({
       ok: true,
       status: 200,
-      json: async () => deezerTrackResponse,
+      json: () => deezerTrackResponse,
     });
     songRepository.findFirst.mockResolvedValue(null);
     songRepository.save.mockImplementation((song: Song) =>
@@ -112,7 +112,7 @@ describe('SaveSongUseCase', () => {
     fetchMock.mockResolvedValue({
       ok: true,
       status: 200,
-      json: async () => deezerTrackResponse,
+      json: () => deezerTrackResponse,
     });
     songRepository.findFirst.mockResolvedValue(existing);
     songRepository.save.mockImplementation((song: Song) =>
@@ -134,7 +134,7 @@ describe('SaveSongUseCase', () => {
     fetchMock.mockResolvedValue({
       ok: false,
       status: 404,
-      json: async () => ({}),
+      json: () => ({}),
     });
 
     await expect(useCase.execute('999999')).rejects.toThrow(
@@ -149,7 +149,7 @@ describe('SaveSongUseCase', () => {
     fetchMock.mockResolvedValue({
       ok: false,
       status: 500,
-      json: async () => ({}),
+      json: () => ({}),
     });
 
     await expect(useCase.execute('3135556')).rejects.toThrow(

@@ -1,6 +1,9 @@
 import { ValidationPipe, type INestApplication } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
-import { getOptionsToken, type ThrottlerModuleOptions } from '@nestjs/throttler';
+import {
+  getOptionsToken,
+  type ThrottlerModuleOptions,
+} from '@nestjs/throttler';
 import cookieParser from 'cookie-parser';
 import { AppModule } from '../../src/app.module';
 import { AllExceptionsFilter } from '../../src/common/filters/all-exceptions.filter';

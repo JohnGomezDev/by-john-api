@@ -48,7 +48,9 @@ export class BlogController {
     return ApiResponseDto.ok(
       {
         ...result,
-        items: result.items.map(PostListItemResponseDto.fromDomain),
+        items: result.items.map((item) =>
+          PostListItemResponseDto.fromDomain(item),
+        ),
       },
       'Listado de posts obtenido exitosamente',
     );
@@ -93,7 +95,7 @@ export class BlogController {
   async listCategories(): Promise<ApiResponseDto<CategoryDto[]>> {
     const categories = await this.listCategoriesUseCase.execute();
     return ApiResponseDto.ok(
-      categories.map(CategoryDto.fromDomain),
+      categories.map((category) => CategoryDto.fromDomain(category)),
       'Listado de categorías obtenido exitosamente',
     );
   }
@@ -111,7 +113,7 @@ export class BlogController {
   async listTags(): Promise<ApiResponseDto<TagDto[]>> {
     const tags = await this.listTagsUseCase.execute();
     return ApiResponseDto.ok(
-      tags.map(TagDto.fromDomain),
+      tags.map((tag) => TagDto.fromDomain(tag)),
       'Listado de tags obtenido exitosamente',
     );
   }

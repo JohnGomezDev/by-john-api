@@ -107,7 +107,9 @@ export class AdminPostController {
     return ApiResponseDto.ok(
       {
         ...result,
-        items: result.items.map(PostListItemResponseDto.fromDomain),
+        items: result.items.map((item) =>
+          PostListItemResponseDto.fromDomain(item),
+        ),
       },
       'Listado de posts obtenido exitosamente',
     );

@@ -82,7 +82,9 @@ export class SongResponseDto {
     dto.id = song.id!;
     dto.trackId = song.trackId;
     dto.trackName = song.trackName;
-    dto.artists = song.artists.map(ArtistResponseDto.fromDomain);
+    dto.artists = song.artists.map((artist) =>
+      ArtistResponseDto.fromDomain(artist),
+    );
     dto.albumId = song.albumId;
     dto.albumName = song.albumName;
     dto.albumCoverUrl = song.albumCoverUrl;
