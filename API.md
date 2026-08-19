@@ -112,9 +112,10 @@ El JWT **no** se renueva en cada request: solo en login y refresh.
 | Público (sin Bearer)          | Protegido (`JwtAuthGuard`) |
 | ----------------------------- | -------------------------- |
 | `POST /auth/login`            | `DELETE /auth/logout`      |
-| `POST /auth/refresh` (cookie) | ` /admin/posts/*`          |
-| `GET /blog/*`                 | `GET /songs/search`        |
-| `GET /songs/favorite`         | `POST /songs/favorite`     |
+| `POST /auth/refresh` (cookie) | `/admin/posts/*`           |
+| `GET /blog/*`                 | `/admin/blog/*`            |
+| `GET /songs/favorite`         | `GET /songs/search`        |
+|                               | `POST /songs/favorite`     |
 
 ---
 
@@ -340,7 +341,151 @@ Todos los tags, ordenados por nombre.
 [{ "id": "uuid", "name": "NestJS", "slug": "nestjs" }]
 ```
 
-Usar estos `id` al crear/editar posts en el CMS (`categoryId`, `tagIds`).
+Usar estos `id` al crear/editar posts en el CMS (`categoryId`, `tagIds`). El listado de categorías y tags es **solo público**: no hay `GET` bajo `/admin/blog`.
+
+---
+
+## Admin — Blog (categorías y tags)
+
+Base: **`/api/admin/blog`**. Todas las rutas: **`Authorization: Bearer`**. No hay ownership por admin: cualquier administrador autenticado puede crear, editar o borrar taxonomía.
+
+No hay listado ni detalle por id en este controller. Para pintar selects del CMS, usar `GET /api/blog/categories` y `GET /api/blog/tags`.
+
+### Tipos
+
+**`Category`**
+
+```json
+{ "id": "uuid", "name": "Backend", "slug": "backend" }
+```
+
+**`Tag`**
+
+```json
+{ "id": "uuid", "name": "NestJS", "slug": "nestjs" }
+```
+
+**Body create** (categoría y tag): `name` y `slug`, ambos string requerido, max 255.
+
+**Body PATCH**: parcial; se pueden enviar `name`, `slug` o ambos.
+
+---
+
+### `POST /api/admin/blog/categories`
+
+**Status éxito:** `201`.  
+`message`: `Categoría creada exitosamente`.  
+**Response `data`:** `Category`.
+
+**Body**
+
+```json
+{
+  "name": "Backend",
+  "slug": "backend"
+}
+```
+
+**Errores**
+
+| Status | `message`                                                              |
+| ------ | ---------------------------------------------------------------------- |
+| 400    | Validación (`El nombre es requerido`, `El slug es requerido`, max 255) |
+| 409    | `Ya existe una categoría con ese nombre o slug`                        |
+
+---
+
+### `PATCH /api/admin/blog/categories/:id`
+
+Actualización parcial.
+
+**Status éxito:** `200`.  
+`message`: `Categoría actualizada exitosamente`.  
+**Response `data`:** `Category`.
+
+**Errores**
+
+| Status | `message`                                       |
+| ------ | ----------------------------------------------- |
+| 400    | Validación o `id` que no es UUID                |
+| 404    | `Categoría con id {id} no encontrada`           |
+| 409    | `Ya existe una categoría con ese nombre o slug` |
+
+---
+
+### `DELETE /api/admin/blog/categories/:id`
+
+Falla si hay posts con esa categoría (`ON DELETE RESTRICT`).
+
+**Status éxito:** `200`.  
+**Response `data`:** `null`.  
+`message`: `Categoría eliminada exitosamente`.
+
+**Errores**
+
+| Status | `message`                                                        |
+| ------ | ---------------------------------------------------------------- |
+| 404    | `Categoría con id {id} no encontrada`                            |
+| 409    | `No se puede eliminar la categoría porque tiene posts asociados` |
+
+Antes de borrar, reasignar o eliminar los posts de esa categoría.
+
+---
+
+### `POST /api/admin/blog/tags`
+
+**Status éxito:** `201`.  
+`message`: `Tag creado exitosamente`.  
+**Response `data`:** `Tag`.
+
+**Body**
+
+```json
+{
+  "name": "NestJS",
+  "slug": "nestjs"
+}
+```
+
+**Errores**
+
+| Status | `message`                                |
+| ------ | ---------------------------------------- |
+| 400    | Validación                               |
+| 409    | `Ya existe un tag con ese nombre o slug` |
+
+---
+
+### `PATCH /api/admin/blog/tags/:id`
+
+**Status éxito:** `200`.  
+`message`: `Tag actualizado exitosamente`.  
+**Response `data`:** `Tag`.
+
+**Errores**
+
+| Status | `message`                                |
+| ------ | ---------------------------------------- |
+| 400    | Validación o UUID inválido               |
+| 404    | `Tag con id {id} no encontrado`          |
+| 409    | `Ya existe un tag con ese nombre o slug` |
+
+---
+
+### `DELETE /api/admin/blog/tags/:id`
+
+Falla si el tag sigue asociado a posts (`post_tag`, FK).
+
+**Status éxito:** `200`.  
+**Response `data`:** `null`.  
+`message`: `Tag eliminado exitosamente`.
+
+**Errores**
+
+| Status | `message`                                                  |
+| ------ | ---------------------------------------------------------- |
+| 404    | `Tag con id {id} no encontrado`                            |
+| 409    | `No se puede eliminar el tag porque está asociado a posts` |
 
 ---
 
@@ -638,6 +783,12 @@ Diferencias vs búsqueda Deezer: `artists` es array; ids son **string**; duraci�
 | GET    | `/api/blog/posts/:slug`          | —               | 200   | detalle público          |
 | GET    | `/api/blog/categories`           | —               | 200   | `Category[]`             |
 | GET    | `/api/blog/tags`                 | —               | 200   | `Tag[]`                  |
+| POST   | `/api/admin/blog/categories`     | Bearer          | 201   | `Category`               |
+| PATCH  | `/api/admin/blog/categories/:id` | Bearer          | 200   | `Category`               |
+| DELETE | `/api/admin/blog/categories/:id` | Bearer          | 200   | `null`                   |
+| POST   | `/api/admin/blog/tags`           | Bearer          | 201   | `Tag`                    |
+| PATCH  | `/api/admin/blog/tags/:id`       | Bearer          | 200   | `Tag`                    |
+| DELETE | `/api/admin/blog/tags/:id`       | Bearer          | 200   | `null`                   |
 | POST   | `/api/admin/posts`               | Bearer          | 201   | `PostDetail`             |
 | GET    | `/api/admin/posts`               | Bearer          | 200   | paginado (incl. drafts)  |
 | GET    | `/api/admin/posts/:id`           | Bearer          | 200   | `PostDetail`             |
@@ -649,4 +800,4 @@ Diferencias vs búsqueda Deezer: `artists` es array; ids son **string**; duraci�
 | POST   | `/api/songs/favorite`            | Bearer          | 201   | `Song`                   |
 | GET    | `/api/songs/favorite`            | —               | 200   | `Song`                   |
 
-No hay endpoint de registro de admins ni CRUD de categorías/tags: se cargan por seeders / BD.
+No hay endpoint de registro de administradores: el usuario inicial se carga con el seeder. Categorías y tags también se siembran, y el CMS puede crear/editar/borrarlas por `/api/admin/blog`.

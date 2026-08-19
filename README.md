@@ -121,12 +121,12 @@ Request → Controller (HTTP) → Use case (lógica) → IRepository (puerto)
 
 ### Módulos
 
-| Módulo  | Rol                                                               |
-| ------- | ----------------------------------------------------------------- |
-| `admin` | Entidad y repositorio de administradores (sin controller público) |
-| `auth`  | Login, refresh, logout, JWT, cookie, CRON de limpieza de tokens   |
-| `blog`  | Blog público + CMS de posts (`/api/blog/*` y `/api/admin/posts`)  |
-| `songs` | Búsqueda Deezer, guardar/reemplazar favorita, lectura pública     |
+| Módulo  | Rol                                                                                                           |
+| ------- | ------------------------------------------------------------------------------------------------------------- |
+| `admin` | Entidad y repositorio de administradores (sin controller público)                                             |
+| `auth`  | Login, refresh, logout, JWT, cookie, CRON de limpieza de tokens                                               |
+| `blog`  | Blog público (`/api/blog/*`), CMS de posts (`/api/admin/posts`) y CRUD de categorías/tags (`/api/admin/blog`) |
+| `songs` | Búsqueda Deezer, guardar/reemplazar favorita, lectura pública                                                 |
 
 Código compartido: `src/common/` (wrapper de respuesta, filtro de excepciones, hasher). Base de datos: `src/database/` (DataSource, migraciones, seeds).
 
