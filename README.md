@@ -1,98 +1,232 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+# Portfolio API
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+Backend del portafolio personal: autenticación de administrador, blog (público y CMS) y canción favorita (Deezer).
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+La referencia de endpoints para el frontend está en [`API.md`](./API.md). La especificación interactiva (Swagger / OpenAPI 3.0) se sirve en `/api/docs`.
 
-## Description
+## Stack
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+| Tecnología                                  | Uso                                                |
+| ------------------------------------------- | -------------------------------------------------- |
+| Node.js **v24.19.0** + **pnpm**             | Runtime y gestor de paquetes                       |
+| **NestJS v11** + TypeScript                 | Framework HTTP                                     |
+| **TypeORM** + **PostgreSQL**                | Persistencia (sin `synchronize`; solo migraciones) |
+| **JWT** (`@nestjs/jwt` + Passport)          | Access token de corta duración                     |
+| Refresh token opaco + cookie `httpOnly`     | Sesión del admin (whitelist en BD)                 |
+| **Swagger** (`@nestjs/swagger`)             | Documentación OpenAPI en `/api/docs`               |
+| **class-validator** / **class-transformer** | Validación de DTOs                                 |
+| **Jest** + Supertest                        | Tests unitarios y e2e                              |
+| **@nestjs/throttler**                       | Rate limiting global                               |
+| **bcrypt**                                  | Hash de contraseñas y secretos de refresh token    |
+| Deezer API (HTTP)                           | Búsqueda y persistencia de la canción favorita     |
 
-## Project setup
+## Requisitos
 
-```bash
-$ pnpm install
-```
+- Node.js 24.19.0 (recomendado)
+- pnpm
+- PostgreSQL 14+ (con soporte de `tsvector` / GIN)
 
-## Compile and run the project
+## Instalación
 
 ```bash
-# development
-$ pnpm run start
-
-# watch mode
-$ pnpm run start:dev
-
-# production mode
-$ pnpm run start:prod
+pnpm install
+cp env.example .env
 ```
 
-## Run tests
+Completa `.env` (sobre todo `JWT_ACCESS_SECRET` y las credenciales de PostgreSQL). Luego:
 
 ```bash
-# unit tests
-$ pnpm run test
-
-# e2e tests
-$ pnpm run test:e2e
-
-# test coverage
-$ pnpm run test:cov
+pnpm migration:run
+pnpm seed:run
+pnpm start:dev
 ```
 
-## Deployment
+La API queda en `http://localhost:<PORT>/api` (por defecto `PORT=4000` en `env.example`). Swagger: `http://localhost:<PORT>/api/docs`.
 
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
+El seeder de admin (solo entorno local) crea:
 
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
+| Campo    | Valor            |
+| -------- | ---------------- |
+| username | `admin`          |
+| password | `Admin123!`      |
+| email    | `admin@test.com` |
+
+También siembra categorías (`backend`, `frontend`, `devops`, `arquitectura`) y tags (`typescript`, `nestjs`, `react`, `postgresql`, `docker`, `clean-architecture`). Los seeders son idempotentes y **no** se ejecutan al arrancar la app.
+
+## Variables de entorno
+
+Definidas en `env.example`:
+
+| Variable                                                  | Descripción                                                                                                      |
+| --------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
+| `NODE_ENV`                                                | `development` / `production`. En producción la cookie de refresh usa `secure: true`                              |
+| `PORT`                                                    | Puerto HTTP (default de código: `3000` si no se define)                                                          |
+| `CORS_ORIGIN`                                             | Orígenes permitidos, separados por coma (ej. `http://localhost:3000`). Si se omite, CORS acepta cualquier origen |
+| `DB_HOST`, `DB_PORT`, `DB_USER`, `DB_PASSWORD`, `DB_NAME` | Conexión PostgreSQL                                                                                              |
+| `JWT_ACCESS_SECRET`                                       | Secreto para firmar el access token (**obligatorio**)                                                            |
+| `JWT_ACCESS_EXPIRES_IN`                                   | TTL del JWT (default `15m`)                                                                                      |
+| `REFRESH_TOKEN_TTL_HOURS`                                 | Ventana de la sesión al hacer login (default `48`). El refresh **no** alarga esa fecha                           |
+
+CORS está habilitado con `credentials: true`. El frontend debe enviar cookies (`credentials: 'include'` / `withCredentials: true`) y el origen debe coincidir con `CORS_ORIGIN`.
+
+## Scripts
 
 ```bash
-$ pnpm install -g @nestjs/mau
-$ mau deploy
+pnpm start          # arranque
+pnpm start:dev      # watch
+pnpm start:debug    # debug + watch
+pnpm start:prod     # node dist/main
+pnpm build
+
+pnpm lint
+pnpm format
+
+pnpm test           # unitarios (src/**/*.spec.ts)
+pnpm test:watch
+pnpm test:cov
+pnpm test:e2e
+pnpm test:e2e:watch
+pnpm test:e2e:cov
+
+pnpm migration:generate src/database/migrations/<nombre>
+pnpm migration:run
+pnpm migration:revert
+pnpm migration:show
+pnpm seed:run
 ```
 
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
+`synchronize` y `migrationsRun` están en `false`. Las migraciones y seeders **solo** se ejecutan con los scripts anteriores.
 
-## Resources
+## Arquitectura
 
-Check out a few resources that may come in handy when working with NestJS:
+Clean Architecture por módulo, con inversión de dependencias: el dominio no conoce TypeORM ni HTTP.
 
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
+```
+Request → Controller (HTTP) → Use case (lógica) → IRepository (puerto)
+                                      ↑
+                         RepositoryImpl + TypeORM (adaptador)
+```
 
-## Support
+| Capa               | Ubicación                                                | Responsabilidad                                                                 |
+| ------------------ | -------------------------------------------------------- | ------------------------------------------------------------------------------- |
+| Entidad de dominio | `domain/entities/*.entity.ts`                            | Clase pura: factories, transiciones de estado, invariantes. Sin decoradores ORM |
+| Puerto             | `domain/repositories/*.repository.interface.ts`          | Contrato + token de inyección                                                   |
+| Caso de uso        | `application/use-cases/**/*.use-case.ts`                 | Toda la lógica de negocio. Lanza las excepciones HTTP                           |
+| Entidad TypeORM    | `infrastructure/persistence/typeorm/*.typeorm-entity.ts` | Tabla y columnas. Nunca importada por el dominio                                |
+| Implementación     | `infrastructure/persistence/*.repository.impl.ts`        | `toOrm` / `toDomain`                                                            |
+| DTO request        | `infrastructure/http/dtos/request/*.request.dto.ts`      | Validación + Swagger                                                            |
+| DTO response       | `infrastructure/http/dtos/response/*.response.dto.ts`    | Forma de salida + `fromDomain`                                                  |
+| Controller         | `infrastructure/http/*.controller.ts`                    | Delega al use case y envuelve en `ApiResponseDto`. Sin lógica                   |
+| Module             | `<module>.module.ts`                                     | Enlaza token → implementación                                                   |
 
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
+### Módulos
 
-## Stay in touch
+| Módulo  | Rol                                                                                                           |
+| ------- | ------------------------------------------------------------------------------------------------------------- |
+| `admin` | Entidad y repositorio de administradores (sin controller público)                                             |
+| `auth`  | Login, refresh, logout, JWT, cookie, CRON de limpieza de tokens                                               |
+| `blog`  | Blog público (`/api/blog/*`), CMS de posts (`/api/admin/posts`) y CRUD de categorías/tags (`/api/admin/blog`) |
+| `songs` | Búsqueda Deezer, guardar/reemplazar favorita, lectura pública                                                 |
 
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
+Código compartido: `src/common/` (wrapper de respuesta, filtro de excepciones, hasher). Base de datos: `src/database/` (DataSource, migraciones, seeds).
 
-## License
+### Flujo HTTP
 
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+1. Prefijo global `/api` (sin versionado).
+2. `ValidationPipe` global: `whitelist`, `forbidNonWhitelisted`, `transform`.
+3. `ThrottlerGuard` global (límites en `AppModule`; login tiene umbrales más estrictos).
+4. `JwtAuthGuard` en rutas de admin.
+5. Éxito: `ApiResponseDto.ok(data, message)` → `{ status: "ok", message, data }`.
+6. Error: `AllExceptionsFilter` → `{ statusCode, message, error }`.
+
+Las excepciones de negocio se lanzan **solo** en los use cases.
+
+## Autenticación
+
+Solo hay usuarios administrador. El login es por `username`, no por email.
+
+| Token         | TTL                                            | Dónde viaja                                             |
+| ------------- | ---------------------------------------------- | ------------------------------------------------------- |
+| Access JWT    | `JWT_ACCESS_EXPIRES_IN` (15m)                  | Header `Authorization: Bearer <token>`                  |
+| Refresh opaco | `REFRESH_TOKEN_TTL_HOURS` (48h desde el login) | Cookie `refresh_token` (`httpOnly`, `sameSite: strict`) |
+
+Payload del JWT: `{ sub, name, lastName, username }`.
+
+El refresh token es `{id}.{secret}`: el `id` es la fila de whitelist; el `secret` solo se persiste como hash bcrypt. Varias sesiones concurrentes están permitidas (una fila por login). En cada refresh se rota el token **sin extender** `expiresAt`. Un mismatch de secreto borra la fila (posible robo). Un job horario (`RefreshTokenCleanupJob`) elimina filas vencidas.
+
+Detalle de integración (headers, cookies, códigos): [`API.md`](./API.md#autenticación).
+
+## Convenciones
+
+- Código en **inglés**. Mensajes al cliente en **español**.
+- Archivos y carpetas de módulo: kebab-case. Clases: PascalCase. Interfaces: `I…`. Type aliases: `T…`.
+- Tablas y columnas: snake_case (`lastName` → `last_name`).
+- JSDoc solo cuando hay reglas o efectos no obvios.
+
+## Base de datos
+
+PostgreSQL. DataSource único en `src/database/datasource.ts` (Nest y CLI).
+
+### Tablas
+
+- `admin_users` — administradores
+- `admin_refresh_tokens` — whitelist de refresh (sin `updated_at`; inmutable)
+- `blog_categories`, `post_tags`, `posts`, `post_tag` (N:N)
+- `songs` — una canción favorita (guardar reemplaza el registro existente)
+
+Relaciones: un admin tiene muchos posts y muchos refresh tokens; una categoría tiene muchos posts; posts ↔ tags vía `post_tag`.
+
+`posts.content` se guarda en **markdown**. `posts.excerpt` ~160 caracteres. `posts.search_vector` es un `tsvector` generado (`spanish` sobre título + contenido) con índice GIN.
+
+Búsqueda full-text:
+
+```sql
+WHERE search_vector @@ plainto_tsquery('spanish', 'palabra clave')
+```
+
+Índices relevantes: slug único, `category_id`, `post_tag.tag_id`, `expires_at` de refresh tokens, GIN de `search_vector`. No hay índice en `posts.published` (volumen bajo).
+
+## Rate limiting
+
+Límites globales (`ThrottlerModule`):
+
+| Nombre   | Ventana | Máximo |
+| -------- | ------- | ------ |
+| `short`  | 1 s     | 3      |
+| `medium` | 60 s    | 20     |
+| `long`   | 1 h     | 200    |
+
+Login (`POST /api/auth/login`) reduce a 5 / 60 s y 20 / 15 min. Respuesta `429`: `Demasiadas solicitudes, intenta de nuevo más tarde`.
+
+## Tests
+
+- Unitarios: junto al código, `*.spec.ts`. Mocks por token de repositorio (`useValue`).
+- e2e: `test/<módulo>/*.e2e-spec.ts` contra la app completa y una **base de datos de test**, nunca la de desarrollo/producción.
+
+Los e2e replican `main.ts` (prefijo `/api`, `ValidationPipe`, filtro global, `cookie-parser` cuando aplica).
+
+## Estructura de carpetas
+
+```
+src/
+  main.ts
+  app.module.ts
+  common/
+    dto/response/
+    filters/
+    security/
+  database/
+    datasource.ts
+    migrations/
+    seeds/
+  modules/
+    admin/
+    auth/
+    blog/
+    songs/
+test/
+  auth/
+  blog/
+  songs/
+  helpers/
+```

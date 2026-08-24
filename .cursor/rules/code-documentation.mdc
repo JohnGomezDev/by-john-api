@@ -1,0 +1,62 @@
+---
+description: When methods and functions must include JSDoc documentation comments
+globs: **/*.ts
+alwaysApply: true
+---
+
+# Code Documentation
+
+Document a method or function with a JSDoc block **only when its complexity justifies it**. Do not add comments that restate the obvious.
+
+## When documentation is required
+
+Add a JSDoc comment if any of the following apply:
+
+- Non-obvious business rules, invariants, or side effects
+- Non-trivial algorithms, branching, or multi-step orchestration
+- Non-obvious parameters, return values, or error cases
+- Private helpers whose purpose is not clear from the name alone
+
+## When documentation is not required
+
+Skip JSDoc for:
+
+- Simple getters, setters, and one-liners
+- CRUD/repository methods whose name already describes the action (`findById`, `save`)
+- Controllers that only delegate to a use case
+- Obvious `execute` methods that only call one domain factory + one repository method
+
+## Format
+
+Use JSDoc (`/** ... */`) in English. Describe **why / what is non-obvious**, not a line-by-line walkthrough. Prefer `@param` / `@returns` / `@throws` only when they add clarity.
+
+```typescript
+/**
+ * Publishes the post only when title and content are present.
+ * Returns a new instance; the original remains unpublished.
+ *
+ * @throws {Error} when the post is incomplete
+ */
+publish(): Post {
+  if (!this.title || !this.content) {
+    throw new Error('No se puede publicar un post incompleto');
+  }
+  return new Post(
+    this.id,
+    this.title,
+    this.content,
+    this.slug,
+    true,
+    this.createdAt,
+    new Date(),
+  );
+}
+```
+
+```typescript
+// ❌ Unnecessary — name already explains the behavior
+/** Finds a post by its id */
+async findById(id: string): Promise<Post | null> {
+  // ...
+}
+```
