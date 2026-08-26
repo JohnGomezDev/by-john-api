@@ -10,6 +10,7 @@ import {
 import {
   deleteAdminsByUsernames,
   deleteRefreshTokensForAdmin,
+  getRefreshTokenRepository,
   upsertAdmin,
 } from '../helpers/fixtures';
 import { anyString, body, http } from '../helpers/http.helper';
@@ -158,6 +159,59 @@ describe('Auth (e2e)', () => {
 
     expect(response.status).toBe(401);
     expect(body(response).message).toBe(AUTH_MESSAGES.EXPIRED_SESSION);
+  });
+
+  // Concurrent refresh with the same cookie must be atomic: one rotates, one is rejected
+  it('POST /api/auth/refresh should handle concurrent refreshes atomically', async () => {
+    const session = await loginAs(app, ADMIN);
+
+    const [first, second] = await Promise.all([
+      http(app).post('/api/auth/refresh').set('Cookie', session.refreshCookie),
+      http(app).post('/api/auth/refresh').set('Cookie', session.refreshCookie),
+    ]);
+
+    const successes = [first, second].filter((response) => response.status === 201);
+    const failures = [first, second].filter((response) => response.status === 401);
+
+    expect(successes).toHaveLength(1);
+    expect(failures).toHaveLength(1);
+    expect(body(successes[0])).toEqual({
+      status: 'ok',
+      message: AUTH_MESSAGES.REFRESH_SUCCESS,
+      data: {
+        accessToken: anyString,
+      },
+    });
+    expect(body(failures[0]).message).toBe(AUTH_MESSAGES.EXPIRED_SESSION);
+
+    const rotatedCookie = getSetCookiePair(successes[0], 'refresh_token');
+    expect(rotatedCookie).toEqual(expect.stringContaining('refresh_token='));
+    expect(rotatedCookie).not.toBe(session.refreshCookie);
+
+    const tokens = await getRefreshTokenRepository(app).find({
+      where: { adminId },
+    });
+    expect(tokens).toHaveLength(1);
+
+    const followUp = await http(app)
+      .post('/api/auth/refresh')
+      .set('Cookie', rotatedCookie!);
+
+    expect(followUp.status).toBe(201);
+    expect(body(followUp)).toEqual({
+      status: 'ok',
+      message: AUTH_MESSAGES.REFRESH_SUCCESS,
+      data: {
+        accessToken: anyString,
+      },
+    });
+
+    const replay = await http(app)
+      .post('/api/auth/refresh')
+      .set('Cookie', session.refreshCookie);
+
+    expect(replay.status).toBe(401);
+    expect(body(replay).message).toBe(AUTH_MESSAGES.EXPIRED_SESSION);
   });
 
   // Logout requires an access token

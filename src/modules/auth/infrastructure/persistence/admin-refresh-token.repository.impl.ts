@@ -26,6 +26,19 @@ export class AdminRefreshTokenRepositoryImpl implements IAdminRefreshTokenReposi
     await this.ormRepo.delete({ id });
   }
 
+  async deleteAndReturnById(id: string): Promise<AdminRefreshToken | null> {
+    const result = await this.ormRepo
+      .createQueryBuilder()
+      .delete()
+      .from(AdminRefreshTokenTypeOrmEntity)
+      .where('id = :id', { id })
+      .returning('*')
+      .execute();
+
+    const raw = (result.raw as Array<Record<string, string | Date>>)[0];
+    return raw ? this.toDomainFromRaw(raw) : null;
+  }
+
   async deleteExpired(): Promise<number> {
     const result = await this.ormRepo.delete({
       expiresAt: LessThanOrEqual(new Date()),
@@ -52,6 +65,29 @@ export class AdminRefreshTokenRepositoryImpl implements IAdminRefreshTokenReposi
       e.expiresAt,
       e.createdAt,
       e.adminId,
+    );
+  }
+
+  /**
+   * Maps a DELETE … RETURNING * row to the domain entity.
+   * TypeORM may expose columns as snake_case (DB names) or camelCase (entity props).
+   */
+  private toDomainFromRaw(
+    raw: Record<string, string | Date>,
+  ): AdminRefreshToken {
+    const tokenHash = raw.token_hash ?? raw.tokenHash;
+    const userAgent = raw.user_agent ?? raw.userAgent;
+    const expiresAt = raw.expires_at ?? raw.expiresAt;
+    const createdAt = raw.created_at ?? raw.createdAt;
+    const adminId = raw.admin_id ?? raw.adminId;
+
+    return new AdminRefreshToken(
+      String(raw.id),
+      String(tokenHash),
+      String(userAgent),
+      expiresAt instanceof Date ? expiresAt : new Date(String(expiresAt)),
+      createdAt instanceof Date ? createdAt : new Date(String(createdAt)),
+      String(adminId),
     );
   }
 }
