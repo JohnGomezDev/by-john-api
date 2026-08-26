@@ -47,11 +47,15 @@ export class RefreshTokenUseCase {
       throw new UnauthorizedException(AUTH_MESSAGES.INVALID_SESSION);
     }
 
-    const storedToken = await this.refreshTokenRepository.findById(parsed.id);
-    if (!storedToken || storedToken.isExpired) {
-      if (storedToken) {
-        await this.refreshTokenRepository.deleteById(storedToken.id);
-      }
+    // Atomic claim: only one concurrent refresh can delete+receive the row.
+    const storedToken = await this.refreshTokenRepository.deleteAndReturnById(
+      parsed.id,
+    );
+    if (!storedToken) {
+      throw new UnauthorizedException(AUTH_MESSAGES.EXPIRED_SESSION);
+    }
+
+    if (storedToken.isExpired) {
       throw new UnauthorizedException(AUTH_MESSAGES.EXPIRED_SESSION);
     }
 
@@ -60,18 +64,14 @@ export class RefreshTokenUseCase {
       storedToken.tokenHash,
     );
     if (!secretMatches) {
-      // Secret mismatch on a known id is a strong signal of token theft/replay — revoke it.
-      await this.refreshTokenRepository.deleteById(storedToken.id);
+      // Row already deleted by the atomic claim — theft/replay is revoked.
       throw new UnauthorizedException(AUTH_MESSAGES.EXPIRED_SESSION);
     }
 
     const admin = await this.adminRepository.findById(storedToken.adminId);
     if (!admin) {
-      await this.refreshTokenRepository.deleteById(storedToken.id);
       throw new UnauthorizedException(AUTH_MESSAGES.EXPIRED_SESSION);
     }
-
-    await this.refreshTokenRepository.deleteById(storedToken.id);
 
     const secret = randomBytes(32).toString('hex');
     // Inherit the previous expiry so a session never extends past the original login window.

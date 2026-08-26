@@ -26,6 +26,7 @@ interface IMockedRefreshTokenRepository {
   save: jest.Mock;
   findById: jest.Mock;
   deleteById: jest.Mock;
+  deleteAndReturnById: jest.Mock;
 }
 
 interface IMockedHasher {
@@ -79,6 +80,7 @@ describe('RefreshTokenUseCase', () => {
             save: jest.fn(),
             findById: jest.fn(),
             deleteById: jest.fn(),
+            deleteAndReturnById: jest.fn(),
           },
         },
         { provide: HASHER, useValue: { hash: jest.fn(), compare: jest.fn() } },
@@ -98,7 +100,9 @@ describe('RefreshTokenUseCase', () => {
   // Valid refresh token should rotate the whitelist row and inherit the previous expiresAt
   it('should rotate the refresh token and return a new access token', async () => {
     let savedToken: AdminRefreshToken | undefined;
-    refreshTokenRepository.findById.mockResolvedValue(validStoredToken);
+    refreshTokenRepository.deleteAndReturnById.mockResolvedValue(
+      validStoredToken,
+    );
     hasher.compare.mockResolvedValue(true);
     adminRepository.findById.mockResolvedValue(admin);
     hasher.hash.mockResolvedValue('new-hash');
@@ -111,7 +115,10 @@ describe('RefreshTokenUseCase', () => {
 
     const result = await useCase.execute('token-id.old-secret', 'Mozilla/5.0');
 
-    expect(refreshTokenRepository.deleteById).toHaveBeenCalledWith('token-id');
+    expect(refreshTokenRepository.deleteAndReturnById).toHaveBeenCalledWith(
+      'token-id',
+    );
+    expect(refreshTokenRepository.deleteById).not.toHaveBeenCalled();
     expect(refreshTokenRepository.save).toHaveBeenCalledTimes(1);
     expect(result.accessToken).toBe('new-access-token');
     expect(result.rawRefreshToken).toContain('.new-secret');
@@ -124,20 +131,20 @@ describe('RefreshTokenUseCase', () => {
     await expect(useCase.execute(undefined, 'Mozilla/5.0')).rejects.toThrow(
       new UnauthorizedException(AUTH_MESSAGES.INVALID_SESSION),
     );
-    expect(refreshTokenRepository.findById).not.toHaveBeenCalled();
+    expect(refreshTokenRepository.deleteAndReturnById).not.toHaveBeenCalled();
   });
 
-  // Unknown token id should be rejected as an expired session
+  // Unknown or already-consumed token id should be rejected as an expired session
   it('should throw UnauthorizedException when the token id is not found', async () => {
-    refreshTokenRepository.findById.mockResolvedValue(null);
+    refreshTokenRepository.deleteAndReturnById.mockResolvedValue(null);
 
     await expect(
       useCase.execute('missing-id.secret', 'Mozilla/5.0'),
     ).rejects.toThrow(new UnauthorizedException(AUTH_MESSAGES.EXPIRED_SESSION));
   });
 
-  // Expired token should be deleted and rejected
-  it('should delete and reject an expired refresh token', async () => {
+  // Expired token (already claimed/deleted) should be rejected without a second delete
+  it('should reject an expired refresh token', async () => {
     const expiredToken = new AdminRefreshToken(
       'token-id',
       'stored-hash',
@@ -146,22 +153,24 @@ describe('RefreshTokenUseCase', () => {
       new Date(),
       admin.id,
     );
-    refreshTokenRepository.findById.mockResolvedValue(expiredToken);
+    refreshTokenRepository.deleteAndReturnById.mockResolvedValue(expiredToken);
 
     await expect(
       useCase.execute('token-id.secret', 'Mozilla/5.0'),
     ).rejects.toThrow(new UnauthorizedException(AUTH_MESSAGES.EXPIRED_SESSION));
-    expect(refreshTokenRepository.deleteById).toHaveBeenCalledWith('token-id');
+    expect(refreshTokenRepository.deleteById).not.toHaveBeenCalled();
   });
 
-  // Secret mismatch should delete the row (possible theft) and reject
-  it('should delete and reject when the secret does not match the stored hash', async () => {
-    refreshTokenRepository.findById.mockResolvedValue(validStoredToken);
+  // Secret mismatch should reject; row was already deleted by the atomic claim
+  it('should reject when the secret does not match the stored hash', async () => {
+    refreshTokenRepository.deleteAndReturnById.mockResolvedValue(
+      validStoredToken,
+    );
     hasher.compare.mockResolvedValue(false);
 
     await expect(
       useCase.execute('token-id.wrong-secret', 'Mozilla/5.0'),
     ).rejects.toThrow(new UnauthorizedException(AUTH_MESSAGES.EXPIRED_SESSION));
-    expect(refreshTokenRepository.deleteById).toHaveBeenCalledWith('token-id');
+    expect(refreshTokenRepository.deleteById).not.toHaveBeenCalled();
   });
 });
