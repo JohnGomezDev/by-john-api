@@ -33,9 +33,9 @@ export class Post {
     title: string;
     slug: string;
     content: string;
+    excerpt: string;
     adminId: string;
     categoryId: string;
-    excerpt?: string;
     metaTitle?: string | null;
     metaDescription?: string | null;
     ogImageUrl?: string | null;
@@ -46,7 +46,7 @@ export class Post {
       props.title,
       props.slug,
       props.content,
-      props.excerpt ?? Post.buildExcerpt(props.content),
+      props.excerpt,
       props.metaTitle ?? null,
       props.metaDescription ?? null,
       props.ogImageUrl ?? null,
@@ -130,16 +130,12 @@ export class Post {
     metaDescription?: string | null;
     ogImageUrl?: string | null;
   }): Post {
-    const content = props.content ?? this.content;
     return new Post(
       this.id,
       props.title ?? this.title,
       props.slug ?? this.slug,
-      content,
-      props.excerpt ??
-        (props.content !== undefined
-          ? Post.buildExcerpt(content)
-          : this.excerpt),
+      props.content ?? this.content,
+      props.excerpt !== undefined ? props.excerpt : this.excerpt,
       props.metaTitle !== undefined ? props.metaTitle : this.metaTitle,
       props.metaDescription !== undefined
         ? props.metaDescription
@@ -157,13 +153,5 @@ export class Post {
         : this.category,
       this.adminInfo,
     );
-  }
-
-  private static buildExcerpt(content: string): string {
-    const normalized = content.trim();
-    if (normalized.length <= 160) {
-      return normalized;
-    }
-    return normalized.substring(0, 160);
   }
 }

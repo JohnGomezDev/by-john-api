@@ -15,7 +15,7 @@ export interface IAdminCreatePostDto {
   title: string;
   slug: string;
   content: string;
-  excerpt?: string;
+  excerpt: string;
   categoryId: string;
   tagIds?: string[];
   metaTitle?: string | null;
