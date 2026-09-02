@@ -39,15 +39,15 @@ export class CreatePostRequestDto {
   @IsNotEmpty({ message: 'El contenido es requerido' })
   content: string;
 
-  @ApiPropertyOptional({
-    description: 'Extracto del post (se genera del contenido si se omite)',
+  @ApiProperty({
+    description: 'Extracto del post',
     example: 'Resumen breve del artículo',
     maxLength: 160,
   })
-  @IsOptional()
   @IsString()
+  @IsNotEmpty({ message: 'El extracto es requerido' })
   @MaxLength(160, { message: 'El extracto no puede superar 160 caracteres' })
-  excerpt?: string;
+  excerpt: string;
 
   @ApiProperty({
     description: 'ID de la categoría',

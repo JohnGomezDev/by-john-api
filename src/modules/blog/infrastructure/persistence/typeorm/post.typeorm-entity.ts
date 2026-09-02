@@ -17,7 +17,7 @@ import { TagTypeOrmEntity } from './tag.typeorm-entity';
 @Entity('posts')
 @Index('idx_post_slug', ['slug'], { unique: true })
 @Index('idx_post_category', ['categoryId'])
-@Index('idx_post_search', ['searchVector'])
+@Index('idx_post_search', ['searchVector'], { type: 'gin' })
 export class PostTypeOrmEntity {
   @PrimaryColumn('uuid')
   id: string;

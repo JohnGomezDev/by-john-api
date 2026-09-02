@@ -39,6 +39,7 @@ describe('GetPostBySlugUseCase', () => {
       title: 'Hello',
       slug,
       content: 'Content',
+      excerpt: 'Content',
       adminId,
       categoryId,
     });

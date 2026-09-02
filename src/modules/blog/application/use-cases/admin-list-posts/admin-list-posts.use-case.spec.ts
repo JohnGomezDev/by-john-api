@@ -21,6 +21,7 @@ describe('AdminListPostsUseCase', () => {
         title: 'Hello',
         slug: 'hello',
         content: 'Content',
+        excerpt: 'Content',
         adminId,
         categoryId,
       }),
