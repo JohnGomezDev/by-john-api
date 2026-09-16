@@ -32,13 +32,6 @@ export class SongRepositoryImpl implements ISongRepository {
     }
     e.trackId = song.trackId;
     e.trackName = song.trackName;
-    e.artists = song.artists;
-    e.albumId = song.albumId;
-    e.albumName = song.albumName;
-    e.albumCoverUrl = song.albumCoverUrl;
-    e.url = song.url;
-    e.previewUrl = song.previewUrl;
-    e.durationMs = song.durationMs;
     e.createdAt = song.createdAt;
     e.updatedAt = song.updatedAt;
     return e;
@@ -49,13 +42,6 @@ export class SongRepositoryImpl implements ISongRepository {
       e.id,
       e.trackId,
       e.trackName,
-      e.artists,
-      e.albumId,
-      e.albumName,
-      e.albumCoverUrl,
-      e.url,
-      e.previewUrl,
-      e.durationMs,
       e.createdAt,
       e.updatedAt,
     );

@@ -2,24 +2,10 @@ import { Song } from './song.entity';
 
 describe('Song', () => {
   const fixedNow = new Date('2026-01-15T10:00:00.000Z');
-  const artists = [
-    {
-      id: '13',
-      name: 'Eminem',
-      url: 'https://www.deezer.com/artist/13',
-    },
-  ];
 
   const baseProps = {
     trackId: '3135556',
     trackName: 'Lose Yourself',
-    artists,
-    albumId: '302127',
-    albumName: '8 Mile',
-    albumCoverUrl: 'https://cdns-images.dzcdn.net/images/cover/cover.jpg',
-    url: 'https://www.deezer.com/track/3135556',
-    previewUrl: 'https://cdns-preview.dzcdn.net/stream/preview.mp3',
-    durationMs: 326000,
   };
 
   beforeEach(() => {
@@ -40,48 +26,18 @@ describe('Song', () => {
         id: null,
         trackId: '3135556',
         trackName: 'Lose Yourself',
-        artists,
-        albumId: '302127',
-        albumName: '8 Mile',
-        albumCoverUrl: 'https://cdns-images.dzcdn.net/images/cover/cover.jpg',
-        url: 'https://www.deezer.com/track/3135556',
-        previewUrl: 'https://cdns-preview.dzcdn.net/stream/preview.mp3',
-        durationMs: 326000,
         createdAt: fixedNow,
         updatedAt: fixedNow,
       }),
     );
   });
 
-  // Factory should default missing previewUrl to null
-  it('should default previewUrl to null when omitted', () => {
-    const song = Song.create({
-      trackId: baseProps.trackId,
-      trackName: baseProps.trackName,
-      artists: baseProps.artists,
-      albumId: baseProps.albumId,
-      albumName: baseProps.albumName,
-      albumCoverUrl: baseProps.albumCoverUrl,
-      url: baseProps.url,
-      durationMs: baseProps.durationMs,
-    });
-
-    expect(song.previewUrl).toBeNull();
-  });
-
-  // replaceWith should keep id and createdAt while updating the rest
+  // replaceWith should keep id and createdAt while updating track data
   it('should replace track data while preserving id and createdAt', () => {
     const existing = new Song(
       1,
       'old-track',
       'Old Title',
-      artists,
-      'old-album',
-      'Old Album',
-      'https://example.com/old-cover.jpg',
-      'https://www.deezer.com/track/old',
-      null,
-      100000,
       new Date('2026-01-01T00:00:00.000Z'),
       new Date('2026-01-01T00:00:00.000Z'),
     );
@@ -96,13 +52,6 @@ describe('Song', () => {
         id: 1,
         trackId: '3135556',
         trackName: 'Lose Yourself',
-        artists,
-        albumId: '302127',
-        albumName: '8 Mile',
-        albumCoverUrl: 'https://cdns-images.dzcdn.net/images/cover/cover.jpg',
-        url: 'https://www.deezer.com/track/3135556',
-        previewUrl: 'https://cdns-preview.dzcdn.net/stream/preview.mp3',
-        durationMs: 326000,
         createdAt: existing.createdAt,
         updatedAt,
       }),
