@@ -5,7 +5,7 @@ import {
   ServiceUnavailableException,
 } from '@nestjs/common';
 import type { FeatureExtractionPipeline } from '@xenova/transformers';
-import { BGE_QUERY_PREFIX } from '../utils/embedding.constants';
+import { BGE_QUERY_PREFIX } from '../../application/constants/embedding.constants';
 
 @Injectable()
 export class EmbeddingService implements OnModuleInit {

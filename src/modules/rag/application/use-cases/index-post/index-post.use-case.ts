@@ -14,7 +14,7 @@ import {
   CHUNK_MAX_CHARS,
   CHUNK_MIN_CHARS,
   CHUNK_OVERLAP_CHARS,
-} from '../../utils/chunking.constants';
+} from '../../constants/chunking.constants';
 
 @Injectable()
 export class IndexPostUseCase {

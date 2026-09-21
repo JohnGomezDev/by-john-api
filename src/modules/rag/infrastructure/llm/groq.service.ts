@@ -7,7 +7,7 @@ import Groq, { APIError } from 'groq-sdk';
 import {
   GROQ_MAX_RETRIES,
   GROQ_MODEL,
-} from '../utils/groq.constants';
+} from '../../application/constants/groq.constants';
 
 @Injectable()
 export class GroqService {
