@@ -4,7 +4,10 @@ import {
   OnModuleInit,
   ServiceUnavailableException,
 } from '@nestjs/common';
-import type { FeatureExtractionPipeline } from '@xenova/transformers';
+import {
+  pipeline,
+  type FeatureExtractionPipeline,
+} from '@xenova/transformers';
 import { BGE_QUERY_PREFIX } from '../../application/constants/embedding.constants';
 
 @Injectable()
@@ -14,7 +17,6 @@ export class EmbeddingService implements OnModuleInit {
 
   async onModuleInit(): Promise<void> {
     try {
-      const { pipeline } = await import('@xenova/transformers');
       this.pipelineInstance = await pipeline(
         'feature-extraction',
         'Xenova/bge-m3',
