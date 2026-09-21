@@ -5,9 +5,7 @@ import {
   ServiceUnavailableException,
 } from '@nestjs/common';
 import type { FeatureExtractionPipeline } from '@xenova/transformers';
-
-const QUERY_PREFIX =
-  'Represent this sentence for searching relevant passages: ';
+import { BGE_QUERY_PREFIX } from '../utils/embedding.constants';
 
 @Injectable()
 export class EmbeddingService implements OnModuleInit {
@@ -44,6 +42,6 @@ export class EmbeddingService implements OnModuleInit {
   }
 
   async embedQuery(query: string): Promise<number[]> {
-    return this.embedDocument(QUERY_PREFIX + query);
+    return this.embedDocument(BGE_QUERY_PREFIX + query);
   }
 }

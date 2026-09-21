@@ -4,9 +4,10 @@ import {
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import Groq, { APIError } from 'groq-sdk';
-
-export const GROQ_MAX_RETRIES = 3;
-export const GROQ_MODEL = 'openai/gpt-oss-20b';
+import {
+  GROQ_MAX_RETRIES,
+  GROQ_MODEL,
+} from '../utils/groq.constants';
 
 @Injectable()
 export class GroqService {
