@@ -71,11 +71,10 @@ Controller: `infrastructure/http/auth.controller.ts`. Zero logic — delegates t
 | `JwtStrategy` | `infrastructure/passport/jwt.strategy.ts` | Validates Bearer access token; populates `req.user` |
 | `JwtAuthGuard` | `infrastructure/guards/jwt-auth.guard.ts` | Protects routes (`AuthGuard('jwt')`) |
 | `@CurrentUser()` | `infrastructure/decorators/current-user.decorator.ts` | Extracts `ICurrentUser` from `req.user` |
-| `AUTH_MESSAGES` | `application/constants/auth-messages.constants.ts` | Centralized success/error messages (Spanish) |
 
 ## Response messages
 
-Import from `AUTH_MESSAGES` — never hardcode strings in use cases, controller, or tests.
+Hardcode Spanish message strings in the controller (success) and use cases (errors) — same pattern as the rest of the modules. Do not centralize them in a constants file.
 
 | Case | Message |
 |---|---|

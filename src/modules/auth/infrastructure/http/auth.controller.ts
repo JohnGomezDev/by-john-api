@@ -22,7 +22,6 @@ import {
 import { Throttle } from '@nestjs/throttler';
 import type { Request, Response } from 'express';
 import { ApiResponseDto } from '../../../../common/dto/response/api-response.dto';
-import { AUTH_MESSAGES } from '../../application/constants/auth-messages.constants';
 import { LoginUseCase } from '../../application/use-cases/login/login.use-case';
 import { LogoutUseCase } from '../../application/use-cases/logout/logout.use-case';
 import { RefreshTokenUseCase } from '../../application/use-cases/refresh-token/refresh-token.use-case';
@@ -82,7 +81,7 @@ export class AuthController {
 
     return ApiResponseDto.ok(
       LoginResponseDto.fromDomain(accessToken, admin),
-      AUTH_MESSAGES.LOGIN_SUCCESS,
+      'Usuario logueado con éxito',
     );
   }
 
@@ -112,7 +111,7 @@ export class AuthController {
 
     return ApiResponseDto.ok(
       RefreshTokenResponseDto.fromAccessToken(accessToken),
-      AUTH_MESSAGES.REFRESH_SUCCESS,
+      'Token renovado con éxito',
     );
   }
 
@@ -133,7 +132,7 @@ export class AuthController {
 
     res.clearCookie(REFRESH_TOKEN_COOKIE);
 
-    return ApiResponseDto.ok(null, AUTH_MESSAGES.LOGOUT_SUCCESS);
+    return ApiResponseDto.ok(null, 'Sesión cerrada con éxito');
   }
 
   private setRefreshTokenCookie(

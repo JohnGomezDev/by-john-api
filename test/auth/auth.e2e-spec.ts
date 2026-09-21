@@ -1,5 +1,4 @@
 import type { INestApplication } from '@nestjs/common';
-import { AUTH_MESSAGES } from '../../src/modules/auth/application/constants/auth-messages.constants';
 import { createE2eApp } from '../helpers/create-e2e-app';
 import {
   bearer,
@@ -63,7 +62,7 @@ describe('Auth (e2e)', () => {
       .send({ username: 'missing.admin', password: ADMIN.password });
 
     expect(response.status).toBe(401);
-    expect(body(response).message).toBe(AUTH_MESSAGES.INVALID_CREDENTIALS);
+    expect(body(response).message).toBe('Usuario o contraseña incorrectos');
   });
 
   // Wrong password should use the same message
@@ -73,7 +72,7 @@ describe('Auth (e2e)', () => {
       .send({ username: ADMIN.username, password: 'WrongPass1' });
 
     expect(response.status).toBe(401);
-    expect(body(response).message).toBe(AUTH_MESSAGES.INVALID_CREDENTIALS);
+    expect(body(response).message).toBe('Usuario o contraseña incorrectos');
   });
 
   // Successful login should return tokens and set the refresh cookie
@@ -87,7 +86,7 @@ describe('Auth (e2e)', () => {
     expect(response.status).toBe(201);
     expect(body(response)).toEqual({
       status: 'ok',
-      message: AUTH_MESSAGES.LOGIN_SUCCESS,
+      message: 'Usuario logueado con éxito',
       data: {
         accessToken: anyString,
         admin: {
@@ -108,7 +107,9 @@ describe('Auth (e2e)', () => {
     const response = await http(app).post('/api/auth/refresh');
 
     expect(response.status).toBe(401);
-    expect(body(response).message).toBe(AUTH_MESSAGES.INVALID_SESSION);
+    expect(body(response).message).toBe(
+      'Sesión inválida, por favor inicia sesión nuevamente',
+    );
   });
 
   // Malformed cookie should be an invalid session
@@ -118,7 +119,9 @@ describe('Auth (e2e)', () => {
       .set('Cookie', 'refresh_token=not-a-valid-token');
 
     expect(response.status).toBe(401);
-    expect(body(response).message).toBe(AUTH_MESSAGES.INVALID_SESSION);
+    expect(body(response).message).toBe(
+      'Sesión inválida, por favor inicia sesión nuevamente',
+    );
   });
 
   // Valid refresh should rotate the cookie and issue a new access token
@@ -134,7 +137,7 @@ describe('Auth (e2e)', () => {
     expect(response.status).toBe(201);
     expect(body(response)).toEqual({
       status: 'ok',
-      message: AUTH_MESSAGES.REFRESH_SUCCESS,
+      message: 'Token renovado con éxito',
       data: {
         accessToken: anyString,
       },
@@ -158,7 +161,9 @@ describe('Auth (e2e)', () => {
       .set('Cookie', session.refreshCookie);
 
     expect(response.status).toBe(401);
-    expect(body(response).message).toBe(AUTH_MESSAGES.EXPIRED_SESSION);
+    expect(body(response).message).toBe(
+      'Sesión expirada, por favor inicia sesión nuevamente',
+    );
   });
 
   // Concurrent refresh with the same cookie must be atomic: one rotates, one is rejected
@@ -177,12 +182,14 @@ describe('Auth (e2e)', () => {
     expect(failures).toHaveLength(1);
     expect(body(successes[0])).toEqual({
       status: 'ok',
-      message: AUTH_MESSAGES.REFRESH_SUCCESS,
+      message: 'Token renovado con éxito',
       data: {
         accessToken: anyString,
       },
     });
-    expect(body(failures[0]).message).toBe(AUTH_MESSAGES.EXPIRED_SESSION);
+    expect(body(failures[0]).message).toBe(
+      'Sesión expirada, por favor inicia sesión nuevamente',
+    );
 
     const rotatedCookie = getSetCookiePair(successes[0], 'refresh_token');
     expect(rotatedCookie).toEqual(expect.stringContaining('refresh_token='));
@@ -200,7 +207,7 @@ describe('Auth (e2e)', () => {
     expect(followUp.status).toBe(201);
     expect(body(followUp)).toEqual({
       status: 'ok',
-      message: AUTH_MESSAGES.REFRESH_SUCCESS,
+      message: 'Token renovado con éxito',
       data: {
         accessToken: anyString,
       },
@@ -211,7 +218,9 @@ describe('Auth (e2e)', () => {
       .set('Cookie', session.refreshCookie);
 
     expect(replay.status).toBe(401);
-    expect(body(replay).message).toBe(AUTH_MESSAGES.EXPIRED_SESSION);
+    expect(body(replay).message).toBe(
+      'Sesión expirada, por favor inicia sesión nuevamente',
+    );
   });
 
   // Logout requires an access token
@@ -235,7 +244,7 @@ describe('Auth (e2e)', () => {
     expect(response.status).toBe(200);
     expect(body(response)).toEqual({
       status: 'ok',
-      message: AUTH_MESSAGES.LOGOUT_SUCCESS,
+      message: 'Sesión cerrada con éxito',
       data: null,
     });
     expect(clearedCookie).toEqual(expect.stringContaining('refresh_token='));
@@ -252,7 +261,7 @@ describe('Auth (e2e)', () => {
     expect(response.status).toBe(200);
     expect(body(response)).toEqual({
       status: 'ok',
-      message: AUTH_MESSAGES.LOGOUT_SUCCESS,
+      message: 'Sesión cerrada con éxito',
       data: null,
     });
   });

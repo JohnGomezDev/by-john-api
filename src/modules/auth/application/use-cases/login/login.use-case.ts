@@ -16,7 +16,6 @@ import {
   ADMIN_REFRESH_TOKEN_REPOSITORY,
   type IAdminRefreshTokenRepository,
 } from '../../../domain/repositories/admin-refresh-token.repository.interface';
-import { AUTH_MESSAGES } from '../../constants/auth-messages.constants';
 import { buildRawRefreshToken } from '../../utils/refresh-token-codec.util';
 
 export interface ILoginDto {
@@ -47,7 +46,7 @@ export class LoginUseCase {
   async execute(dto: ILoginDto, userAgent: string): Promise<ILoginResult> {
     const admin = await this.adminRepository.findByUsername(dto.username);
     if (!admin) {
-      throw new UnauthorizedException(AUTH_MESSAGES.INVALID_CREDENTIALS);
+      throw new UnauthorizedException('Usuario o contraseña incorrectos');
     }
 
     const passwordMatches = await this.hasher.compare(
@@ -55,7 +54,7 @@ export class LoginUseCase {
       admin.passwordHash,
     );
     if (!passwordMatches) {
-      throw new UnauthorizedException(AUTH_MESSAGES.INVALID_CREDENTIALS);
+      throw new UnauthorizedException('Usuario o contraseña incorrectos');
     }
 
     const secret = randomBytes(32).toString('hex');
