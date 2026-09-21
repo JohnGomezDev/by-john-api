@@ -82,7 +82,7 @@ todos:
     status: completed
   - id: readme-update
     content: "Actualizar `README.md` con estos cambios precisos: (1) En la tabla de **Requisitos**, reemplazar la fila de PostgreSQL por `pgvector/pgvector:pg17 (Docker)` con descripción `PostgreSQL 17 con extensión pgvector incluida`. (2) En la tabla de **Stack**, agregar dos filas: `Xenova/bge-m3 (local, ONNX)` con `Embeddings para búsqueda semántica (1024 dims)` y `Groq openai/gpt-oss-20b` con `LLM para generación de respuestas RAG`. (3) En la tabla de **Variables de entorno**, agregar `GROQ_API_KEY` con descripción `Clave de API de Groq (obligatoria para el módulo RAG)` y `RAG_TOP_K` con `Número de chunks recuperados por búsqueda (default: 5)`. (4) Agregar una nueva sección `## Asistente del Blog (RAG)` después de la sección de Scripts con este contenido: describir que el sistema indexa automáticamente los posts al publicarlos usando embeddings BGE-M3 y los almacena en `posts_chunks` con pgvector; la búsqueda combina semántica (HNSW cosine) + full-text (tsvector GIN) con Reciprocal Rank Fusion; el endpoint `POST /api/rag/ask` con body `{ \"query\": string }` retorna `{ answer: string, sources: [{ title, slug }] }` y es público."
-    status: pending
+    status: completed
 isProject: false
 ---
 
