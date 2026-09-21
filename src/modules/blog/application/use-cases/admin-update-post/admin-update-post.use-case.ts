@@ -5,6 +5,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import { QueryFailedError } from 'typeorm';
 import { Post } from '../../../domain/entities/post.entity';
 import {
@@ -29,6 +30,7 @@ export class AdminUpdatePostUseCase {
   constructor(
     @Inject(POST_REPOSITORY)
     private readonly postRepository: IPostRepository,
+    private readonly eventEmitter: EventEmitter2,
   ) {}
 
   async execute(
@@ -59,7 +61,13 @@ export class AdminUpdatePostUseCase {
     const tagIds = dto.tagIds ?? post.tags.map((tag) => tag.id);
 
     try {
-      return await this.postRepository.save(updated, tagIds);
+      const savedPost = await this.postRepository.save(updated, tagIds);
+
+      if (savedPost.published) {
+        this.eventEmitter.emit('post.updated', { postId: savedPost.id });
+      }
+
+      return savedPost;
     } catch (error) {
       if (error instanceof QueryFailedError) {
         const code = (error as unknown as { code?: string }).code;

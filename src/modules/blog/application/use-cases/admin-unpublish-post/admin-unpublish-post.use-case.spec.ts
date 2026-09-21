@@ -1,4 +1,9 @@
+jest.mock('@nestjs/event-emitter', () => ({
+  EventEmitter2: class EventEmitter2 {},
+}));
+
 import { ForbiddenException, NotFoundException } from '@nestjs/common';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import { Test } from '@nestjs/testing';
 import { Post } from '../../../domain/entities/post.entity';
 import { Tag } from '../../../domain/entities/tag.entity';
@@ -34,6 +39,12 @@ describe('AdminUnpublishPostUseCase', () => {
           useValue: {
             findById: jest.fn(),
             save: jest.fn(),
+          },
+        },
+        {
+          provide: EventEmitter2,
+          useValue: {
+            emit: jest.fn(),
           },
         },
       ],

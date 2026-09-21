@@ -5,6 +5,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import { Post } from '../../../domain/entities/post.entity';
 import {
   POST_REPOSITORY,
@@ -16,6 +17,7 @@ export class AdminPublishPostUseCase {
   constructor(
     @Inject(POST_REPOSITORY)
     private readonly postRepository: IPostRepository,
+    private readonly eventEmitter: EventEmitter2,
   ) {}
 
   async execute(id: string, adminId: string): Promise<Post> {
@@ -28,12 +30,20 @@ export class AdminPublishPostUseCase {
       throw new ForbiddenException('No tienes permiso para publicar este post');
     }
 
+    const wasAlreadyPublished = post.published;
+
     try {
       const published = post.publish();
-      return await this.postRepository.save(
+      const savedPost = await this.postRepository.save(
         published,
         post.tags.map((tag) => tag.id),
       );
+
+      if (!wasAlreadyPublished) {
+        this.eventEmitter.emit('post.published', { postId: savedPost.id });
+      }
+
+      return savedPost;
     } catch (error) {
       if (
         error instanceof Error &&

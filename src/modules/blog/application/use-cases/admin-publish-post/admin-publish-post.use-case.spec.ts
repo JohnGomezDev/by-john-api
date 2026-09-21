@@ -1,8 +1,13 @@
+jest.mock('@nestjs/event-emitter', () => ({
+  EventEmitter2: class EventEmitter2 {},
+}));
+
 import {
   BadRequestException,
   ForbiddenException,
   NotFoundException,
 } from '@nestjs/common';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import { Test } from '@nestjs/testing';
 import { Post } from '../../../domain/entities/post.entity';
 import { Tag } from '../../../domain/entities/tag.entity';
@@ -14,9 +19,14 @@ interface IMockedPostRepository {
   save: jest.Mock;
 }
 
+interface IMockedEventEmitter {
+  emit: jest.Mock;
+}
+
 describe('AdminPublishPostUseCase', () => {
   let useCase: AdminPublishPostUseCase;
   let postRepository: IMockedPostRepository;
+  let eventEmitter: IMockedEventEmitter;
 
   const postId = '66666666-6666-6666-6666-666666666666';
   const adminId = '77777777-7777-7777-7777-777777777777';
@@ -40,11 +50,18 @@ describe('AdminPublishPostUseCase', () => {
             save: jest.fn(),
           },
         },
+        {
+          provide: EventEmitter2,
+          useValue: {
+            emit: jest.fn(),
+          },
+        },
       ],
     }).compile();
 
     useCase = module.get(AdminPublishPostUseCase);
     postRepository = module.get(POST_REPOSITORY);
+    eventEmitter = module.get(EventEmitter2);
   });
 
   afterEach(() => {
@@ -99,6 +116,9 @@ describe('AdminPublishPostUseCase', () => {
     );
     expect(result.published).toBe(true);
     expect(result.publishedAt).toEqual(fixedNow);
+    expect(eventEmitter.emit).toHaveBeenCalledWith('post.published', {
+      postId: result.id,
+    });
   });
 
   // Re-publishing should remain idempotent and keep the original publishedAt
@@ -138,6 +158,7 @@ describe('AdminPublishPostUseCase', () => {
       [tagId],
     );
     expect(result.publishedAt).toEqual(firstPublishedAt);
+    expect(eventEmitter.emit).not.toHaveBeenCalled();
   });
 
   // Missing post should surface as NotFoundException
