@@ -66,20 +66,33 @@ export class AskBlogUseCase {
 
     return {
       answer,
-      sources: this.deduplicateSources(results),
+      sources: this.sourcesFromCitations(answer, results),
     };
   }
 
-  private deduplicateSources(
+  /**
+   * Builds sources from `[n]` citations in the LLM answer, mapped to the
+   * numbered retrieval chunks. Out-of-range indices are ignored; posts are
+   * deduplicated by postId in citation order.
+   */
+  private sourcesFromCitations(
+    answer: string,
     results: IHybridSearchResult[],
   ): IAskBlogSource[] {
     const seen = new Set<string>();
     const sources: IAskBlogSource[] = [];
 
-    for (const result of results) {
+    for (const match of answer.matchAll(/\[(\d+)\]/g)) {
+      const index = Number.parseInt(match[1], 10) - 1;
+      if (index < 0 || index >= results.length) {
+        continue;
+      }
+
+      const result = results[index];
       if (seen.has(result.postId)) {
         continue;
       }
+
       seen.add(result.postId);
       sources.push({
         title: result.postTitle,

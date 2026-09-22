@@ -3,13 +3,13 @@ import type { IAskBlogResult } from '../../../../application/use-cases/ask-blog/
 
 export class PostSourceDto {
   @ApiProperty({
-    description: 'Título del post fuente',
+    description: 'Título del post citado por el asistente',
     example: 'Autenticación JWT en NestJS',
   })
   title: string;
 
   @ApiProperty({
-    description: 'Slug del post fuente',
+    description: 'Slug del post citado por el asistente',
     example: 'autenticacion-jwt-en-nestjs',
   })
   slug: string;
@@ -24,7 +24,8 @@ export class AskBlogResponseDto {
   answer: string;
 
   @ApiProperty({
-    description: 'Posts del blog usados como contexto',
+    description:
+      'Posts citados en la respuesta (derivados de las referencias [n] del LLM)',
     type: [PostSourceDto],
   })
   sources: PostSourceDto[];

@@ -79,8 +79,8 @@ describe('AskBlogUseCase', () => {
     };
   }
 
-  // Happy path: embed, search, call LLM, and return answer with sources
-  it('should embed the query with instruction prefix, search, call LLM, and return answer with sources', async () => {
+  // Happy path: sources come only from [n] citations in the LLM answer
+  it('should return sources derived from citations in the LLM answer', async () => {
     chunkRepository.hybridSearch.mockResolvedValue([
       buildSearchResult({
         chunkId: 'chunk-1',
@@ -95,6 +95,9 @@ describe('AskBlogUseCase', () => {
         postSlug: 'nestjs-tips',
       }),
     ]);
+    groqService.generateAnswer.mockResolvedValue(
+      'La autenticación se describe en [1].',
+    );
 
     const result = await useCase.execute(query);
 
@@ -107,12 +110,67 @@ describe('AskBlogUseCase', () => {
     expect(configService.get).toHaveBeenCalledWith('RAG_TOP_K', 5);
     expect(groqService.generateAnswer).toHaveBeenCalledTimes(1);
     expect(result).toEqual({
-      answer: 'Esta es la respuesta',
-      sources: [
-        { title: 'Auth JWT', slug: 'auth-jwt' },
-        { title: 'NestJS Tips', slug: 'nestjs-tips' },
-      ],
+      answer: 'La autenticación se describe en [1].',
+      sources: [{ title: 'Auth JWT', slug: 'auth-jwt' }],
     });
+  });
+
+  // Multiple citations to the same post should yield a single source
+  it('should deduplicate sources by postId when several citations map to the same post', async () => {
+    chunkRepository.hybridSearch.mockResolvedValue([
+      buildSearchResult({
+        chunkId: 'chunk-1',
+        postId: 'post-1',
+        postTitle: 'Auth JWT',
+        postSlug: 'auth-jwt',
+      }),
+      buildSearchResult({
+        chunkId: 'chunk-2',
+        postId: 'post-1',
+        postTitle: 'Auth JWT',
+        postSlug: 'auth-jwt',
+      }),
+    ]);
+    groqService.generateAnswer.mockResolvedValue(
+      'Ver [1] y también [2] del mismo post.',
+    );
+
+    const result = await useCase.execute(query);
+
+    expect(result.sources).toEqual([
+      { title: 'Auth JWT', slug: 'auth-jwt' },
+    ]);
+  });
+
+  // No [n] citations means empty sources even if retrieval returned chunks
+  it('should return empty sources when the LLM answer has no citations', async () => {
+    chunkRepository.hybridSearch.mockResolvedValue([buildSearchResult()]);
+    groqService.generateAnswer.mockResolvedValue(
+      'No encontré esa información en el contexto.',
+    );
+
+    const result = await useCase.execute(query);
+
+    expect(result.sources).toEqual([]);
+  });
+
+  // Out-of-range citation numbers must be ignored
+  it('should ignore out-of-range citation numbers', async () => {
+    chunkRepository.hybridSearch.mockResolvedValue([
+      buildSearchResult({
+        postTitle: 'Auth JWT',
+        postSlug: 'auth-jwt',
+      }),
+    ]);
+    groqService.generateAnswer.mockResolvedValue(
+      'Según [1] y el inventado [99].',
+    );
+
+    const result = await useCase.execute(query);
+
+    expect(result.sources).toEqual([
+      { title: 'Auth JWT', slug: 'auth-jwt' },
+    ]);
   });
 
   // Empty retrieval must return the predefined answer without calling the LLM
@@ -122,8 +180,10 @@ describe('AskBlogUseCase', () => {
     const result = await useCase.execute(query);
 
     expect(groqService.generateAnswer).not.toHaveBeenCalled();
-    expect(result.answer).toBe(RAG_NO_MATCH_ANSWER);
-    expect(result.sources).toEqual([]);
+    expect(result).toEqual({
+      answer: RAG_NO_MATCH_ANSWER,
+      sources: [],
+    });
   });
 
   // Groq ServiceUnavailableException must propagate unchanged

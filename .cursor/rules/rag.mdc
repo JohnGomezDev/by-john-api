@@ -55,7 +55,7 @@ Event names follow `post.<action>`:
 
 - If `hybridSearch` returns empty: return `RAG_NO_MATCH_ANSWER` with `sources: []` and **do not** call the LLM.
 - Never pass an empty context to Groq.
-- Deduplicate sources by `postId` before returning.
+- `sources` are derived from `[n]` citations in the LLM answer, mapped to the numbered retrieval chunks (1-based). Out-of-range indices are ignored; deduplicate by `postId`. If the answer has no citations, return `sources: []`.
 
 ## HTTP
 

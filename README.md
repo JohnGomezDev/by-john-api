@@ -125,6 +125,8 @@ Respuesta (dentro de `ApiResponseDto`):
 }
 ```
 
+`sources` solo incluye posts que el LLM citó con `[n]` en la respuesta (no todos los chunks recuperados).
+
 ## Arquitectura
 
 Clean Architecture por módulo, con inversión de dependencias: el dominio no conoce TypeORM ni HTTP.
