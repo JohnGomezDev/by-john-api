@@ -87,6 +87,7 @@ jobs:
       DB_PASSWORD: e2e_pass
       DB_NAME: e2e_db
       JWT_ACCESS_SECRET: ${{ secrets.CI_JWT_ACCESS_SECRET }}
+      GROQ_API_KEY: ${{ secrets.CI_GROQ_API_KEY }}
       JWT_ACCESS_EXPIRES_IN: 15m
       REFRESH_TOKEN_TTL_HOURS: 48
       RAG_TOP_K: 5
