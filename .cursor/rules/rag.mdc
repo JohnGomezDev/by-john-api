@@ -6,7 +6,7 @@ alwaysApply: false
 
 # RAG — Blog semantic assistant
 
-Hybrid retrieval (pgvector + `tsvector` + RRF) over published posts, with local BGE-M3 embeddings and Groq `openai/gpt-oss-20b` for answers. Follows the standard module layout (domain → application → infrastructure).
+Hybrid retrieval (pgvector + `tsvector` + RRF) over published posts, with local multilingual E5 embeddings and Groq `openai/gpt-oss-20b` for answers. Follows the standard module layout (domain → application → infrastructure).
 
 ## Chunking
 
@@ -18,8 +18,9 @@ Hybrid retrieval (pgvector + `tsvector` + RRF) over published posts, with local 
 ## Embedding
 
 - Never instantiate the `@xenova/transformers` pipeline outside `EmbeddingService`.
-- Document chunks: `embedDocument(text)` — **no** instruction prefix.
-- Search queries: `embedQuery(query)` — always uses `BGE_QUERY_PREFIX` from `infrastructure/utils/embedding.constants.ts`.
+- Model: `Xenova/multilingual-e5-small`. Pool with `mean` and `normalize: true`. Vectors are 384 dimensions.
+- Document chunks: `embedDocument(text)` — always prefixes `E5_PASSAGE_PREFIX` (`passage: `).
+- Search queries: `embedQuery(query)` — always prefixes `E5_QUERY_PREFIX` (`query: `). Prefixes live in `application/constants/embedding.constants.ts`.
 - If the pipeline is not initialized, throw `ServiceUnavailableException`.
 
 ## LLM (Groq)

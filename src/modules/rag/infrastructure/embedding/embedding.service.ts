@@ -5,7 +5,10 @@ import {
   ServiceUnavailableException,
 } from '@nestjs/common';
 import { pipeline, type FeatureExtractionPipeline } from '@xenova/transformers';
-import { BGE_QUERY_PREFIX } from '../../application/constants/embedding.constants';
+import {
+  E5_PASSAGE_PREFIX,
+  E5_QUERY_PREFIX,
+} from '../../application/constants/embedding.constants';
 
 @Injectable()
 export class EmbeddingService implements OnModuleInit {
@@ -16,9 +19,11 @@ export class EmbeddingService implements OnModuleInit {
     try {
       this.pipelineInstance = await pipeline(
         'feature-extraction',
-        'Xenova/bge-m3',
+        'Xenova/multilingual-e5-small',
       );
-      this.logger.log('Modelo Xenova/bge-m3 cargado correctamente');
+      this.logger.log(
+        'Modelo Xenova/multilingual-e5-small cargado correctamente',
+      );
     } catch (error) {
       this.logger.error(
         'No se pudo inicializar el modelo de embeddings',
@@ -29,6 +34,14 @@ export class EmbeddingService implements OnModuleInit {
   }
 
   async embedDocument(text: string): Promise<number[]> {
+    return this.embed(E5_PASSAGE_PREFIX + text);
+  }
+
+  async embedQuery(query: string): Promise<number[]> {
+    return this.embed(E5_QUERY_PREFIX + query);
+  }
+
+  private async embed(text: string): Promise<number[]> {
     if (!this.pipelineInstance) {
       throw new ServiceUnavailableException(
         'El servicio de embeddings no está disponible',
@@ -36,14 +49,10 @@ export class EmbeddingService implements OnModuleInit {
     }
 
     const output = await this.pipelineInstance(text, {
-      pooling: 'cls',
+      pooling: 'mean',
       normalize: true,
     });
 
     return Array.from(output.data as ArrayLike<number>);
-  }
-
-  async embedQuery(query: string): Promise<number[]> {
-    return this.embedDocument(BGE_QUERY_PREFIX + query);
   }
 }

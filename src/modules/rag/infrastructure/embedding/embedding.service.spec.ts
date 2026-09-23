@@ -5,7 +5,11 @@ jest.mock('@xenova/transformers', () => ({
 import { ServiceUnavailableException } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import { pipeline } from '@xenova/transformers';
-import { BGE_QUERY_PREFIX } from '../../application/constants/embedding.constants';
+import {
+  E5_PASSAGE_PREFIX,
+  E5_QUERY_PREFIX,
+  EMBEDDING_DIMENSION,
+} from '../../application/constants/embedding.constants';
 import { EmbeddingService } from './embedding.service';
 
 describe('EmbeddingService', () => {
@@ -27,48 +31,51 @@ describe('EmbeddingService', () => {
     jest.clearAllMocks();
   });
 
-  // Pipeline should load the BGE-M3 feature-extraction model on init
+  // Pipeline should load the multilingual E5 small feature-extraction model on init
   it('should call pipeline with correct model on init', async () => {
     await service.onModuleInit();
 
     expect(pipeline).toHaveBeenCalledWith(
       'feature-extraction',
-      'Xenova/bge-m3',
+      'Xenova/multilingual-e5-small',
     );
   });
 
-  // Document embeddings must not add the BGE query instruction prefix
-  it('should embed a document without instruction prefix', async () => {
+  // Document embeddings must use the E5 passage prefix and mean pooling
+  it('should embed a document with the passage prefix', async () => {
     await service.onModuleInit();
-    mockPipelineInstance.mockResolvedValue({ data: new Float32Array(1024) });
+    mockPipelineInstance.mockResolvedValue({
+      data: new Float32Array(EMBEDDING_DIMENSION),
+    });
 
     const result = await service.embedDocument('texto');
 
-    expect(mockPipelineInstance).toHaveBeenCalledWith('texto', {
-      pooling: 'cls',
-      normalize: true,
-    });
-    expect(result).toHaveLength(1024);
+    expect(mockPipelineInstance).toHaveBeenCalledWith(
+      `${E5_PASSAGE_PREFIX}texto`,
+      {
+        pooling: 'mean',
+        normalize: true,
+      },
+    );
+    expect(result).toHaveLength(EMBEDDING_DIMENSION);
     expect(result.every((value) => typeof value === 'number')).toBe(true);
   });
 
-  // Query embeddings must include the BGE-M3 retrieval instruction prefix
-  it('should embed a query with BGE-M3 instruction prefix', async () => {
+  // Query embeddings must use the E5 query prefix and mean pooling
+  it('should embed a query with the query prefix', async () => {
     await service.onModuleInit();
-    mockPipelineInstance.mockResolvedValue({ data: new Float32Array(1024) });
+    mockPipelineInstance.mockResolvedValue({
+      data: new Float32Array(EMBEDDING_DIMENSION),
+    });
 
     await service.embedQuery('mi pregunta');
 
     expect(mockPipelineInstance).toHaveBeenCalledWith(
-      `${BGE_QUERY_PREFIX}mi pregunta`,
+      `${E5_QUERY_PREFIX}mi pregunta`,
       {
-        pooling: 'cls',
+        pooling: 'mean',
         normalize: true,
       },
-    );
-    const [embeddedQuery] = mockPipelineInstance.mock.calls[0] as [string];
-    expect(embeddedQuery).toMatch(
-      /^Represent this sentence for searching relevant passages: /,
     );
   });
 

@@ -1,2 +1,3 @@
-export const BGE_QUERY_PREFIX =
-  'Represent this sentence for searching relevant passages: ';
+export const E5_QUERY_PREFIX = 'query: ';
+export const E5_PASSAGE_PREFIX = 'passage: ';
+export const EMBEDDING_DIMENSION = 384;
