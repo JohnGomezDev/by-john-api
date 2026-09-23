@@ -7,5 +7,11 @@
   "maxWorkers": 1,
   "transform": {
     "^.+\\.(t|j)s$": "ts-jest"
+  },
+  "transformIgnorePatterns": [
+    "node_modules/.pnpm/(?!(@nestjs\\+event-emitter)@)"
+  ],
+  "moduleNameMapper": {
+    "^@xenova/transformers$": "<rootDir>/test/mocks/xenova-transformers.mock.ts"
   }
 }
