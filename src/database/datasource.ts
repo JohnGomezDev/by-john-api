@@ -8,7 +8,7 @@ config({ quiet: true });
 
 const configService = new ConfigService();
 
-const isProduction = process.env.NODE_ENV === 'production';
+const isProduction = configService.get<string>('NODE_ENV') === 'production';
 
 export const dataSourceOptions: DataSourceOptions & SeederOptions = {
   type: 'postgres',
