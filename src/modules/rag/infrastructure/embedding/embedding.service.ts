@@ -4,10 +4,7 @@ import {
   OnModuleInit,
   ServiceUnavailableException,
 } from '@nestjs/common';
-import {
-  pipeline,
-  type FeatureExtractionPipeline,
-} from '@xenova/transformers';
+import { pipeline, type FeatureExtractionPipeline } from '@xenova/transformers';
 import { BGE_QUERY_PREFIX } from '../../application/constants/embedding.constants';
 
 @Injectable()
@@ -23,7 +20,10 @@ export class EmbeddingService implements OnModuleInit {
       );
       this.logger.log('Modelo Xenova/bge-m3 cargado correctamente');
     } catch (error) {
-      this.logger.error('No se pudo inicializar el modelo de embeddings', error);
+      this.logger.error(
+        'No se pudo inicializar el modelo de embeddings',
+        error,
+      );
       this.pipelineInstance = null;
     }
   }

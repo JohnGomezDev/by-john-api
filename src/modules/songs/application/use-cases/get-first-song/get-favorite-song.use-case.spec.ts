@@ -124,9 +124,7 @@ describe('GetFavoriteSongUseCase', () => {
     });
 
     await expect(useCase.execute()).rejects.toThrow(
-      new NotFoundException(
-        'Canción con id 3135556 no encontrada en Deezer',
-      ),
+      new NotFoundException('Canción con id 3135556 no encontrada en Deezer'),
     );
   });
 

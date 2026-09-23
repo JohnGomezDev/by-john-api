@@ -81,7 +81,8 @@ export class IndexPostUseCase {
     let buffer = '';
 
     for (const paragraph of paragraphs) {
-      const candidate = buffer.length > 0 ? `${buffer}\n\n${paragraph}` : paragraph;
+      const candidate =
+        buffer.length > 0 ? `${buffer}\n\n${paragraph}` : paragraph;
 
       if (candidate.length <= CHUNK_MAX_CHARS) {
         buffer = candidate;
@@ -132,7 +133,8 @@ export class IndexPostUseCase {
         window.lastIndexOf('!\n'),
       );
 
-      const cutIndex = breakAt > CHUNK_MIN_CHARS ? breakAt + 1 : CHUNK_MAX_CHARS;
+      const cutIndex =
+        breakAt > CHUNK_MIN_CHARS ? breakAt + 1 : CHUNK_MAX_CHARS;
       parts.push(remaining.slice(0, cutIndex).trim());
       remaining = remaining.slice(cutIndex).trim();
     }

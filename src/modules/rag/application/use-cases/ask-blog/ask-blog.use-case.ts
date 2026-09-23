@@ -35,10 +35,7 @@ export class AskBlogUseCase {
 
   async execute(query: string): Promise<IAskBlogResult> {
     const vector = await this.embeddingService.embedQuery(query);
-    const topK = this.configService.get<number>(
-      'RAG_TOP_K',
-      RAG_TOP_K_DEFAULT,
-    );
+    const topK = this.configService.get<number>('RAG_TOP_K', RAG_TOP_K_DEFAULT);
     const results = await this.chunkRepository.hybridSearch(
       vector,
       query,

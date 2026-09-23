@@ -141,9 +141,11 @@ describe('RefreshTokenUseCase', () => {
 
     await expect(
       useCase.execute('missing-id.secret', 'Mozilla/5.0'),
-    ).rejects.toThrow(new UnauthorizedException(
+    ).rejects.toThrow(
+      new UnauthorizedException(
         'Sesión expirada, por favor inicia sesión nuevamente',
-      ));
+      ),
+    );
   });
 
   // Expired token (already claimed/deleted) should be rejected without a second delete
@@ -160,9 +162,11 @@ describe('RefreshTokenUseCase', () => {
 
     await expect(
       useCase.execute('token-id.secret', 'Mozilla/5.0'),
-    ).rejects.toThrow(new UnauthorizedException(
+    ).rejects.toThrow(
+      new UnauthorizedException(
         'Sesión expirada, por favor inicia sesión nuevamente',
-      ));
+      ),
+    );
     expect(refreshTokenRepository.deleteById).not.toHaveBeenCalled();
   });
 
@@ -175,9 +179,11 @@ describe('RefreshTokenUseCase', () => {
 
     await expect(
       useCase.execute('token-id.wrong-secret', 'Mozilla/5.0'),
-    ).rejects.toThrow(new UnauthorizedException(
+    ).rejects.toThrow(
+      new UnauthorizedException(
         'Sesión expirada, por favor inicia sesión nuevamente',
-      ));
+      ),
+    );
     expect(refreshTokenRepository.deleteById).not.toHaveBeenCalled();
   });
 });

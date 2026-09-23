@@ -44,9 +44,7 @@ describe('AskBlogUseCase', () => {
         {
           provide: GroqService,
           useValue: {
-            generateAnswer: jest
-              .fn()
-              .mockResolvedValue('Esta es la respuesta'),
+            generateAnswer: jest.fn().mockResolvedValue('Esta es la respuesta'),
           },
         },
         {
@@ -137,9 +135,7 @@ describe('AskBlogUseCase', () => {
 
     const result = await useCase.execute(query);
 
-    expect(result.sources).toEqual([
-      { title: 'Auth JWT', slug: 'auth-jwt' },
-    ]);
+    expect(result.sources).toEqual([{ title: 'Auth JWT', slug: 'auth-jwt' }]);
   });
 
   // No [n] citations means empty sources even if retrieval returned chunks
@@ -168,9 +164,7 @@ describe('AskBlogUseCase', () => {
 
     const result = await useCase.execute(query);
 
-    expect(result.sources).toEqual([
-      { title: 'Auth JWT', slug: 'auth-jwt' },
-    ]);
+    expect(result.sources).toEqual([{ title: 'Auth JWT', slug: 'auth-jwt' }]);
   });
 
   // Empty retrieval must return the predefined answer without calling the LLM

@@ -175,8 +175,12 @@ describe('Auth (e2e)', () => {
       http(app).post('/api/auth/refresh').set('Cookie', session.refreshCookie),
     ]);
 
-    const successes = [first, second].filter((response) => response.status === 201);
-    const failures = [first, second].filter((response) => response.status === 401);
+    const successes = [first, second].filter(
+      (response) => response.status === 201,
+    );
+    const failures = [first, second].filter(
+      (response) => response.status === 401,
+    );
 
     expect(successes).toHaveLength(1);
     expect(failures).toHaveLength(1);

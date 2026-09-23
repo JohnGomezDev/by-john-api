@@ -12,7 +12,9 @@ import { PostTypeOrmEntity } from '../../../../blog/infrastructure/persistence/t
 
 @Entity('posts_chunks')
 @Index('idx_chunks_post_id', ['postId'])
-@Index('idx_chunks_post_chunk_index', ['postId', 'chunkIndex'], { unique: true })
+@Index('idx_chunks_post_chunk_index', ['postId', 'chunkIndex'], {
+  unique: true,
+})
 export class PostChunkTypeOrmEntity {
   @PrimaryColumn('uuid')
   id: string;

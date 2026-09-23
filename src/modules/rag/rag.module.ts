@@ -13,10 +13,7 @@ import { PostChunkRepositoryImpl } from './infrastructure/persistence/post-chunk
 import { PostChunkTypeOrmEntity } from './infrastructure/persistence/typeorm/post-chunk.typeorm-entity';
 
 @Module({
-  imports: [
-    TypeOrmModule.forFeature([PostChunkTypeOrmEntity]),
-    BlogModule,
-  ],
+  imports: [TypeOrmModule.forFeature([PostChunkTypeOrmEntity]), BlogModule],
   controllers: [RagController],
   providers: [
     {

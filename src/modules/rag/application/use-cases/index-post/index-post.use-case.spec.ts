@@ -18,7 +18,9 @@ import { IndexPostUseCase } from './index-post.use-case';
 describe('IndexPostUseCase', () => {
   let useCase: IndexPostUseCase;
   let postRepository: jest.Mocked<Pick<IPostRepository, 'findById'>>;
-  let chunkRepository: jest.Mocked<Pick<IPostChunkRepository, 'replaceForPost'>>;
+  let chunkRepository: jest.Mocked<
+    Pick<IPostChunkRepository, 'replaceForPost'>
+  >;
   let embeddingService: { embedDocument: jest.Mock };
 
   const postId = '11111111-1111-1111-1111-111111111111';
@@ -94,7 +96,7 @@ describe('IndexPostUseCase', () => {
       expect.arrayContaining([
         expect.objectContaining({
           postId,
-          embedding: expect.any(Array),
+          embedding: expect.any(Array) as number[],
         }),
       ]),
     );
@@ -110,9 +112,9 @@ describe('IndexPostUseCase', () => {
 
     await useCase.execute(postId);
 
-    const embeddedTexts = embeddingService.embedDocument.mock.calls.map(
-      (call) => call[0] as string,
-    );
+    const embeddedTexts = (
+      embeddingService.embedDocument.mock.calls as [string][]
+    ).map((call) => call[0]);
 
     for (const text of embeddedTexts) {
       expect(text).not.toMatch(/#|\*\*|\[|!\[/);

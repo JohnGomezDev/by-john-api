@@ -38,12 +38,6 @@ export class SongRepositoryImpl implements ISongRepository {
   }
 
   private toDomain(e: SongTypeOrmEntity): Song {
-    return new Song(
-      e.id,
-      e.trackId,
-      e.trackName,
-      e.createdAt,
-      e.updatedAt,
-    );
+    return new Song(e.id, e.trackId, e.trackName, e.createdAt, e.updatedAt);
   }
 }

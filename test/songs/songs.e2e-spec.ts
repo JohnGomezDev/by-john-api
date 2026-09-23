@@ -111,8 +111,6 @@ describe('Songs (e2e)', () => {
         id: song.id,
         trackId: song.trackId,
         trackName: song.trackName,
-        albumName: song.albumName,
-        durationMs: song.durationMs,
       }),
     });
   });

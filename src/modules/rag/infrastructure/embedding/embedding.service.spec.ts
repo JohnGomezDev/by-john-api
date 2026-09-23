@@ -31,7 +31,10 @@ describe('EmbeddingService', () => {
   it('should call pipeline with correct model on init', async () => {
     await service.onModuleInit();
 
-    expect(pipeline).toHaveBeenCalledWith('feature-extraction', 'Xenova/bge-m3');
+    expect(pipeline).toHaveBeenCalledWith(
+      'feature-extraction',
+      'Xenova/bge-m3',
+    );
   });
 
   // Document embeddings must not add the BGE query instruction prefix
@@ -63,7 +66,8 @@ describe('EmbeddingService', () => {
         normalize: true,
       },
     );
-    expect(mockPipelineInstance.mock.calls[0][0]).toMatch(
+    const [embeddedQuery] = mockPipelineInstance.mock.calls[0] as [string];
+    expect(embeddedQuery).toMatch(
       /^Represent this sentence for searching relevant passages: /,
     );
   });

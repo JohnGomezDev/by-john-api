@@ -1,9 +1,6 @@
-import {
-  Injectable,
-  ServiceUnavailableException,
-} from '@nestjs/common';
+import { Injectable, ServiceUnavailableException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import Groq, { APIError } from 'groq-sdk';
+import Groq, { RateLimitError } from 'groq-sdk';
 import {
   GROQ_MAX_RETRIES,
   GROQ_MODEL,
@@ -37,12 +34,8 @@ export class GroqService {
 
         return response.choices[0]?.message?.content ?? '';
       } catch (error: unknown) {
-        if (
-          error instanceof APIError &&
-          error.status === 429 &&
-          attempt < GROQ_MAX_RETRIES
-        ) {
-          const retryAfter = error.headers?.get('retry-after');
+        if (error instanceof RateLimitError && attempt < GROQ_MAX_RETRIES) {
+          const retryAfter = error.headers.get('retry-after');
           const waitSecs = parseInt(retryAfter ?? String(attempt * 5), 10);
           await new Promise((resolve) => setTimeout(resolve, waitSecs * 1000));
           continue;
