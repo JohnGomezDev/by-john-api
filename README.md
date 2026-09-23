@@ -19,12 +19,14 @@ La referencia de endpoints para el frontend está en [`API.md`](./API.md). La es
 | **@nestjs/throttler**                       | Rate limiting global                               |
 | **bcrypt**                                  | Hash de contraseñas y secretos de refresh token    |
 | Deezer API (HTTP)                           | Búsqueda y persistencia de la canción favorita     |
+| **Xenova/bge-m3** (local, ONNX)             | Embeddings para búsqueda semántica (1024 dims)     |
+| **Groq** `openai/gpt-oss-20b`               | LLM para generación de respuestas RAG              |
 
 ## Requisitos
 
 - Node.js 24.19.0 (recomendado)
 - pnpm
-- PostgreSQL 14+ (con soporte de `tsvector` / GIN)
+- `pgvector/pgvector:pg17` (Docker) — PostgreSQL 17 con extensión pgvector incluida
 
 ## Instalación
 
@@ -66,6 +68,8 @@ Definidas en `env.example`:
 | `JWT_ACCESS_SECRET`                                       | Secreto para firmar el access token (**obligatorio**)                                                            |
 | `JWT_ACCESS_EXPIRES_IN`                                   | TTL del JWT (default `15m`)                                                                                      |
 | `REFRESH_TOKEN_TTL_HOURS`                                 | Ventana de la sesión al hacer login (default `48`). El refresh **no** alarga esa fecha                           |
+| `GROQ_API_KEY`                                            | Clave de API de Groq (obligatoria para el módulo RAG)                                                            |
+| `RAG_TOP_K`                                               | Número de chunks recuperados por búsqueda (default: 5)                                                           |
 
 CORS está habilitado con `credentials: true`. El frontend debe enviar cookies (`credentials: 'include'` / `withCredentials: true`) y el origen debe coincidir con `CORS_ORIGIN`.
 
@@ -96,6 +100,32 @@ pnpm seed:run
 ```
 
 `synchronize` y `migrationsRun` están en `false`. Las migraciones y seeders **solo** se ejecutan con los scripts anteriores.
+
+## Asistente del Blog (RAG)
+
+Al publicar (o actualizar) un post, el sistema lo indexa automáticamente: convierte el markdown a texto plano, lo divide en chunks, genera embeddings con **BGE-M3** y los guarda en `posts_chunks` (pgvector). Al despublicar, elimina esos chunks.
+
+La consulta combina búsqueda semántica (HNSW, distancia coseno) y full-text (`tsvector` GIN) mediante **Reciprocal Rank Fusion (RRF)**. Con los fragmentos recuperados, Groq (`openai/gpt-oss-20b`) genera la respuesta.
+
+Endpoint público (sin autenticación):
+
+```http
+POST /api/rag/ask
+Content-Type: application/json
+
+{ "query": "¿Cómo implementar autenticación JWT en NestJS?" }
+```
+
+Respuesta (dentro de `ApiResponseDto`):
+
+```json
+{
+  "answer": "…",
+  "sources": [{ "title": "…", "slug": "…" }]
+}
+```
+
+`sources` solo incluye posts que el LLM citó con `[n]` en la respuesta (no todos los chunks recuperados).
 
 ## Arquitectura
 

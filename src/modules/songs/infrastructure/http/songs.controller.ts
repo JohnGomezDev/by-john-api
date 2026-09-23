@@ -17,7 +17,10 @@ import { SearchSongsUseCase } from '../../application/use-cases/search-songs/sea
 import { SearchSongsRequestDto } from './dtos/request/search-songs.request.dto';
 import { SaveSongRequestDto } from './dtos/request/save-song.request.dto';
 import { DeezerSearchSongItemResponseDto } from './dtos/response/deezer-search-song-item.response.dto';
-import { SongResponseDto } from './dtos/response/song.response.dto';
+import {
+  SavedSongResponseDto,
+  SongResponseDto,
+} from './dtos/response/song.response.dto';
 
 @ApiTags('Songs')
 @Controller('songs')
@@ -63,7 +66,7 @@ export class SongsController {
   @ApiBody({ type: SaveSongRequestDto })
   @ApiOkResponse({
     description: 'Canción guardada con éxito',
-    type: SongResponseDto,
+    type: SavedSongResponseDto,
   })
   @ApiNotFoundResponse({ description: 'Canción no encontrada en Deezer' })
   @ApiUnauthorizedResponse({ description: 'No autenticado' })
@@ -71,11 +74,11 @@ export class SongsController {
   @Post('favorite')
   async saveSong(
     @Body() dto: SaveSongRequestDto,
-  ): Promise<ApiResponseDto<SongResponseDto>> {
+  ): Promise<ApiResponseDto<SavedSongResponseDto>> {
     const song = await this.saveSongUseCase.execute(dto.trackId);
 
     return ApiResponseDto.ok(
-      SongResponseDto.fromDomain(song),
+      SavedSongResponseDto.fromDomain(song),
       SONGS_MESSAGES.SONG_SAVED,
     );
   }
@@ -83,7 +86,7 @@ export class SongsController {
   @ApiOperation({
     summary: 'Obtener la canción favorita guardada',
     description:
-      'Retorna la canción favorita almacenada en la base de datos. Endpoint público.',
+      'Retorna la canción favorita almacenada en la base de datos, enriquecida con datos frescos de Deezer. Endpoint público.',
   })
   @ApiOkResponse({
     description: 'Canción obtenida con éxito',
@@ -95,7 +98,7 @@ export class SongsController {
     const song = await this.getFavoriteSongUseCase.execute();
 
     return ApiResponseDto.ok(
-      SongResponseDto.fromDomain(song),
+      SongResponseDto.fromFavorite(song),
       SONGS_MESSAGES.SONG_FOUND,
     );
   }

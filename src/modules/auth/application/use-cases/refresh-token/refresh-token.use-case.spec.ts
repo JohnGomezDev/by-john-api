@@ -7,7 +7,6 @@ import { ADMIN_REPOSITORY } from '../../../../admin/domain/repositories/admin.re
 import { HASHER } from '../../../../../common/security/hasher.interface';
 import { AdminRefreshToken } from '../../../domain/entities/admin-refresh-token.entity';
 import { ADMIN_REFRESH_TOKEN_REPOSITORY } from '../../../domain/repositories/admin-refresh-token.repository.interface';
-import { AUTH_MESSAGES } from '../../constants/auth-messages.constants';
 import { RefreshTokenUseCase } from './refresh-token.use-case';
 
 jest.mock('node:crypto', () => {
@@ -129,7 +128,9 @@ describe('RefreshTokenUseCase', () => {
   // Missing or malformed cookie should be rejected before touching the repository
   it('should throw UnauthorizedException when the cookie is missing or malformed', async () => {
     await expect(useCase.execute(undefined, 'Mozilla/5.0')).rejects.toThrow(
-      new UnauthorizedException(AUTH_MESSAGES.INVALID_SESSION),
+      new UnauthorizedException(
+        'Sesión inválida, por favor inicia sesión nuevamente',
+      ),
     );
     expect(refreshTokenRepository.deleteAndReturnById).not.toHaveBeenCalled();
   });
@@ -140,7 +141,11 @@ describe('RefreshTokenUseCase', () => {
 
     await expect(
       useCase.execute('missing-id.secret', 'Mozilla/5.0'),
-    ).rejects.toThrow(new UnauthorizedException(AUTH_MESSAGES.EXPIRED_SESSION));
+    ).rejects.toThrow(
+      new UnauthorizedException(
+        'Sesión expirada, por favor inicia sesión nuevamente',
+      ),
+    );
   });
 
   // Expired token (already claimed/deleted) should be rejected without a second delete
@@ -157,7 +162,11 @@ describe('RefreshTokenUseCase', () => {
 
     await expect(
       useCase.execute('token-id.secret', 'Mozilla/5.0'),
-    ).rejects.toThrow(new UnauthorizedException(AUTH_MESSAGES.EXPIRED_SESSION));
+    ).rejects.toThrow(
+      new UnauthorizedException(
+        'Sesión expirada, por favor inicia sesión nuevamente',
+      ),
+    );
     expect(refreshTokenRepository.deleteById).not.toHaveBeenCalled();
   });
 
@@ -170,7 +179,11 @@ describe('RefreshTokenUseCase', () => {
 
     await expect(
       useCase.execute('token-id.wrong-secret', 'Mozilla/5.0'),
-    ).rejects.toThrow(new UnauthorizedException(AUTH_MESSAGES.EXPIRED_SESSION));
+    ).rejects.toThrow(
+      new UnauthorizedException(
+        'Sesión expirada, por favor inicia sesión nuevamente',
+      ),
+    );
     expect(refreshTokenRepository.deleteById).not.toHaveBeenCalled();
   });
 });

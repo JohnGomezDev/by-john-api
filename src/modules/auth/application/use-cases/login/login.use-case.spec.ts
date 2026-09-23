@@ -8,7 +8,6 @@ import { ADMIN_REPOSITORY } from '../../../../admin/domain/repositories/admin.re
 import { HASHER } from '../../../../../common/security/hasher.interface';
 import { AdminRefreshToken } from '../../../domain/entities/admin-refresh-token.entity';
 import { ADMIN_REFRESH_TOKEN_REPOSITORY } from '../../../domain/repositories/admin-refresh-token.repository.interface';
-import { AUTH_MESSAGES } from '../../constants/auth-messages.constants';
 import { LoginUseCase } from './login.use-case';
 
 jest.mock('node:crypto', () => {
@@ -167,7 +166,7 @@ describe('LoginUseCase', () => {
         'Mozilla/5.0',
       ),
     ).rejects.toThrow(
-      new UnauthorizedException(AUTH_MESSAGES.INVALID_CREDENTIALS),
+      new UnauthorizedException('Usuario o contraseña incorrectos'),
     );
     expect(hasher.compare).not.toHaveBeenCalled();
   });
@@ -180,7 +179,7 @@ describe('LoginUseCase', () => {
     await expect(
       useCase.execute({ username: 'admin', password: 'wrong' }, 'Mozilla/5.0'),
     ).rejects.toThrow(
-      new UnauthorizedException(AUTH_MESSAGES.INVALID_CREDENTIALS),
+      new UnauthorizedException('Usuario o contraseña incorrectos'),
     );
     expect(refreshTokenRepository.save).not.toHaveBeenCalled();
   });

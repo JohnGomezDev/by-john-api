@@ -21,6 +21,7 @@ describe('AdminCreatePostUseCase', () => {
     title: 'Hello',
     slug: 'hello',
     content: 'Content',
+    excerpt: 'Content',
     categoryId,
     tagIds: [tagId],
   };

@@ -162,21 +162,16 @@ export class CategorySeeder implements Seeder {
 
 > PK is `(post_id, tag_id)`. No `created_at` / `updated_at` — pure relation, rows are only inserted or deleted.
 
-#### `spotify_tracks`
+#### `songs`
 | Column | Type | Constraints |
 |---|---|---|
 | id | SERIAL | PK |
-| track_id | VARCHAR | NOT NULL — Spotify track ID |
-| track_name | VARCHAR | NOT NULL — `name` |
-| artists | JSONB | NOT NULL — `[{ id, name, spotifyUrl }]` |
-| album_id | VARCHAR | NOT NULL — `album.id` |
-| album_name | VARCHAR | NOT NULL — `album.name` |
-| album_cover_url | VARCHAR | NOT NULL — `album.images[0].url` |
-| spotify_url | VARCHAR | NOT NULL — `external_urls.spotify` |
-| preview_url | VARCHAR | NULLABLE — not always returned by the API |
-| duration_ms | INT | NOT NULL |
+| track_id | VARCHAR | NOT NULL — Deezer track ID |
+| track_name | VARCHAR | NOT NULL — track title from Deezer |
 | created_at | TIMESTAMP | |
 | updated_at | TIMESTAMP | |
+
+> Only one favorite song is kept (upsert). Rich track data (`preview_url`, artists, album, etc.) is **not** persisted — it is fetched live from Deezer on `GET /songs/favorite` because preview URLs expire.
 
 ---
 

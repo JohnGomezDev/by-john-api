@@ -1,0 +1,63 @@
+---
+description: Convenciones del módulo RAG
+globs: src/modules/rag/**/*.ts
+alwaysApply: false
+---
+
+# RAG — Blog semantic assistant
+
+Hybrid retrieval (pgvector + `tsvector` + RRF) over published posts, with local BGE-M3 embeddings and Groq `openai/gpt-oss-20b` for answers. Follows the standard module layout (domain → application → infrastructure).
+
+## Chunking
+
+- Always strip Markdown with `remove-markdown` before chunking (`IndexPostUseCase`).
+- Target size: 200–1500 characters (`CHUNK_MIN_CHARS` / `CHUNK_MAX_CHARS`), with 100 characters of overlap (`CHUNK_OVERLAP_CHARS`).
+- Prefer paragraph boundaries (`\n\n`). Split oversized text at the last `.` / `?` / `!` before the max length.
+- Constants live in `application/constants/chunking.constants.ts`.
+
+## Embedding
+
+- Never instantiate the `@xenova/transformers` pipeline outside `EmbeddingService`.
+- Document chunks: `embedDocument(text)` — **no** instruction prefix.
+- Search queries: `embedQuery(query)` — always uses `BGE_QUERY_PREFIX` from `infrastructure/utils/embedding.constants.ts`.
+- If the pipeline is not initialized, throw `ServiceUnavailableException`.
+
+## LLM (Groq)
+
+- Every Groq call goes through `GroqService.generateAnswer()`.
+- Model and retries: `GROQ_MODEL`, `GROQ_MAX_RETRIES` in `infrastructure/utils/groq.constants.ts`.
+- Use `temperature: 0`.
+- The system prompt must constrain the model to answer only from the provided context (`RAG_SYSTEM_PROMPT`).
+- Only `GroqService` maps Groq/API errors. Use cases receive either a string answer or `ServiceUnavailableException` — never handle Groq network/rate-limit details themselves.
+
+## Hybrid search
+
+- All vector + FTS retrieval uses the RRF SQL in `PostChunkRepositoryImpl.hybridSearch()`.
+- Do not run semantic and FTS searches separately outside the repository.
+- Scope to `published = true` inside each CTE leg.
+- `RAG_TOP_K` (default 5) is the final limit; candidate limit per leg is 50 (keep in sync with the SQL `LIMIT 50` / `RAG_CANDIDATE_LIMIT` docs).
+
+## Indexing events
+
+Event names follow `post.<action>`:
+
+| Event              | When                                        | Handler              |
+| ------------------ | ------------------------------------------- | -------------------- |
+| `post.published`   | Draft → published only (idempotent publish) | `IndexPostUseCase`   |
+| `post.updated`     | Saved post is published                     | `IndexPostUseCase`   |
+| `post.unpublished` | Was published before unpublish              | `UnindexPostUseCase` |
+
+- Payload is always `{ postId: string }`.
+- Listeners (`PostIndexingListener`) only call use cases — never repositories directly.
+- Post delete relies on DB `ON DELETE CASCADE` for `posts_chunks`; no listener required.
+
+## Ask flow (`AskBlogUseCase`)
+
+- If `hybridSearch` returns empty: return `RAG_NO_MATCH_ANSWER` with `sources: []` and **do not** call the LLM.
+- Never pass an empty context to Groq.
+- `sources` are derived from `[n]` citations in the LLM answer, mapped to the numbered retrieval chunks (1-based). Out-of-range indices are ignored; deduplicate by `postId`. If the answer has no citations, return `sources: []`.
+
+## HTTP
+
+- Public endpoint: `POST /api/rag/ask` (no auth guard).
+- Controller only delegates to `AskBlogUseCase` and wraps with `ApiResponseDto.ok`.

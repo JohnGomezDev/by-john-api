@@ -65,6 +65,7 @@ El filtro global **no** usa el wrapper `status/data`. Forma fija:
 | 404  | Recurso inexistente                                                     |
 | 409  | Slug de post duplicado                                                  |
 | 429  | Rate limit                                                              |
+| 503  | Servicio de IA no disponible (embeddings o Groq)                        |
 | 500  | Error interno (`"Error interno del servidor"`)                          |
 
 ### Validación
@@ -114,8 +115,8 @@ El JWT **no** se renueva en cada request: solo en login y refresh.
 | `POST /auth/login`            | `DELETE /auth/logout`      |
 | `POST /auth/refresh` (cookie) | `/admin/posts/*`           |
 | `GET /blog/*`                 | `/admin/blog/*`            |
-| `GET /songs/favorite`         | `GET /songs/search`        |
-|                               | `POST /songs/favorite`     |
+| `POST /rag/ask`               | `GET /songs/search`        |
+| `GET /songs/favorite`         | `POST /songs/favorite`     |
 
 ---
 
@@ -342,6 +343,62 @@ Todos los tags, ordenados por nombre.
 ```
 
 Usar estos `id` al crear/editar posts en el CMS (`categoryId`, `tagIds`). El listado de categorías y tags es **solo público**: no hay `GET` bajo `/admin/blog`.
+
+---
+
+## Asistente del Blog (RAG)
+
+Consulta en lenguaje natural sobre el contenido de los posts **publicados**. Combina búsqueda semántica (embeddings) + full-text y genera la respuesta con un LLM. Endpoint **público** (sin Bearer).
+
+La indexación es automática al publicar / actualizar / despublicar un post (eventos internos). No hay endpoints de indexación manual.
+
+### `POST /api/rag/ask`
+
+**Auth:** no. **Status éxito:** `201`.  
+`message`: `Consulta procesada exitosamente`.
+
+**Body**
+
+| Campo   | Tipo   | Requerido | Notas                          |
+| ------- | ------ | --------- | ------------------------------ |
+| `query` | string | sí        | min 3, max 500 caracteres      |
+
+```json
+{
+  "query": "¿Cómo implementar autenticación JWT en NestJS?"
+}
+```
+
+**Response `data`**
+
+```json
+{
+  "answer": "Según el post [1], la autenticación JWT en NestJS se implementa con Passport…",
+  "sources": [
+    {
+      "title": "Autenticación JWT en NestJS",
+      "slug": "autenticacion-jwt-en-nestjs"
+    }
+  ]
+}
+```
+
+Notas para UI:
+
+- `answer` es texto en español. Puede incluir referencias `[1]`, `[2]`, … a fragmentos del contexto interno.
+- `sources` son los posts que el modelo **citó** con `[n]` en la respuesta (deduplicados por post). Si no cita ninguno, `sources` es `[]`.
+- Si no hay posts indexados / publicados con chunks, `answer` es el mensaje fijo `No encontré información sobre ese tema en el blog. Prueba con otras palabras clave.` y `sources: []` (sigue siendo éxito HTTP; no es 404).
+- Con posts indexados, una pregunta irrelevante puede igual devolver `201` con un `answer` del LLM diciendo que no hay info y `sources: []`.
+
+**Errores**
+
+| Status | `message`                                                                 |
+| ------ | ------------------------------------------------------------------------- |
+| 400    | `La pregunta es requerida`, `La pregunta debe tener al menos 3 caracteres`, `La pregunta no puede superar 500 caracteres`, u otros de validación |
+| 503    | `El servicio de embeddings no está disponible` o `El servicio de IA no está disponible en este momento` |
+| 429    | Rate limit                                                                |
+
+Tras publicar un post, la indexación es eventual (asíncrona): puede haber un breve desfase hasta que el asistente lo tenga en el índice.
 
 ---
 
@@ -783,6 +840,7 @@ Diferencias vs búsqueda Deezer: `artists` es array; ids son **string**; duraci�
 | GET    | `/api/blog/posts/:slug`          | —               | 200   | detalle público          |
 | GET    | `/api/blog/categories`           | —               | 200   | `Category[]`             |
 | GET    | `/api/blog/tags`                 | —               | 200   | `Tag[]`                  |
+| POST   | `/api/rag/ask`                   | —               | 201   | `{ answer, sources }`    |
 | POST   | `/api/admin/blog/categories`     | Bearer          | 201   | `Category`               |
 | PATCH  | `/api/admin/blog/categories/:id` | Bearer          | 200   | `Category`               |
 | DELETE | `/api/admin/blog/categories/:id` | Bearer          | 200   | `null`                   |

@@ -1,8 +1,13 @@
+jest.mock('@nestjs/event-emitter', () => ({
+  EventEmitter2: class EventEmitter2 {},
+}));
+
 import {
   ConflictException,
   ForbiddenException,
   NotFoundException,
 } from '@nestjs/common';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import { Test } from '@nestjs/testing';
 import { QueryFailedError } from 'typeorm';
 import { Post } from '../../../domain/entities/post.entity';
@@ -39,6 +44,7 @@ describe('AdminUpdatePostUseCase', () => {
       title: 'Hello',
       slug: 'hello',
       content: 'Content',
+      excerpt: 'Content',
       adminId,
       categoryId,
     });
@@ -70,6 +76,12 @@ describe('AdminUpdatePostUseCase', () => {
           useValue: {
             findById: jest.fn(),
             save: jest.fn(),
+          },
+        },
+        {
+          provide: EventEmitter2,
+          useValue: {
+            emit: jest.fn(),
           },
         },
       ],

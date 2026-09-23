@@ -4,6 +4,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import { Post } from '../../../domain/entities/post.entity';
 import {
   POST_REPOSITORY,
@@ -15,6 +16,7 @@ export class AdminUnpublishPostUseCase {
   constructor(
     @Inject(POST_REPOSITORY)
     private readonly postRepository: IPostRepository,
+    private readonly eventEmitter: EventEmitter2,
   ) {}
 
   async execute(id: string, adminId: string): Promise<Post> {
@@ -29,10 +31,17 @@ export class AdminUnpublishPostUseCase {
       );
     }
 
+    const wasPublished = post.published;
     const unpublished = post.unpublish();
-    return this.postRepository.save(
+    const savedPost = await this.postRepository.save(
       unpublished,
       post.tags.map((tag) => tag.id),
     );
+
+    if (wasPublished) {
+      this.eventEmitter.emit('post.unpublished', { postId: savedPost.id });
+    }
+
+    return savedPost;
   }
 }

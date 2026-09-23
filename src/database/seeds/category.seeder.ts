@@ -3,11 +3,14 @@ import { DataSource } from 'typeorm';
 import { Seeder } from 'typeorm-extension';
 import { CategoryTypeOrmEntity } from '../../modules/blog/infrastructure/persistence/typeorm/category.typeorm-entity';
 
-const TEST_CATEGORIES = [
+const CATEGORIES = [
   { name: 'Backend', slug: 'backend' },
   { name: 'Frontend', slug: 'frontend' },
-  { name: 'DevOps', slug: 'devops' },
+  { name: 'Proyectos', slug: 'proyectos' },
   { name: 'Arquitectura', slug: 'arquitectura' },
+  { name: 'Inteligencia Artificial', slug: 'inteligencia-artificial' },
+  { name: 'Base de datos', slug: 'base-de-datos' },
+  { name: 'Seguridad', slug: 'seguridad' },
 ];
 
 export default class CategorySeeder implements Seeder {
@@ -15,7 +18,7 @@ export default class CategorySeeder implements Seeder {
     const repository = dataSource.getRepository(CategoryTypeOrmEntity);
     const now = new Date();
 
-    for (const category of TEST_CATEGORIES) {
+    for (const category of CATEGORIES) {
       const existing = await repository.findOne({
         where: [{ slug: category.slug }, { name: category.name }],
       });

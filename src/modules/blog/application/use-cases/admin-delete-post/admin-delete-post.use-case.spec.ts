@@ -42,6 +42,7 @@ describe('AdminDeletePostUseCase', () => {
       title: 'Hello',
       slug: 'hello',
       content: 'Content',
+      excerpt: 'Content',
       adminId,
       categoryId,
     });
@@ -70,6 +71,7 @@ describe('AdminDeletePostUseCase', () => {
       title: 'Hello',
       slug: 'hello',
       content: 'Content',
+      excerpt: 'Content',
       adminId,
       categoryId,
     });

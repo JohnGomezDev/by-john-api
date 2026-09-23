@@ -21,12 +21,13 @@ describe('Post', () => {
     jest.useRealTimers();
   });
 
-  // Factory should create an unpublished post with generated excerpt
-  it('should create an unpublished post with generated excerpt', () => {
+  // Factory should create an unpublished post with the provided excerpt
+  it('should create an unpublished post with provided excerpt', () => {
     const post = Post.create({
       title: 'Hello',
       slug: 'hello',
       content: 'Short content',
+      excerpt: 'Short content',
       adminId,
       categoryId,
     });
@@ -51,42 +52,13 @@ describe('Post', () => {
     );
   });
 
-  // Factory should truncate excerpt to 160 characters when content is longer
-  it('should truncate excerpt to 160 characters', () => {
-    const content = 'a'.repeat(200);
-
-    const post = Post.create({
-      title: 'Long',
-      slug: 'long',
-      content,
-      adminId,
-      categoryId,
-    });
-
-    expect(post.excerpt).toHaveLength(160);
-    expect(post.excerpt).toBe('a'.repeat(160));
-  });
-
-  // Factory should use provided excerpt when given
-  it('should use provided excerpt when given', () => {
-    const post = Post.create({
-      title: 'Hello',
-      slug: 'hello',
-      content: 'Full markdown content',
-      excerpt: 'Custom excerpt',
-      adminId,
-      categoryId,
-    });
-
-    expect(post.excerpt).toBe('Custom excerpt');
-  });
-
   // Factory should persist optional SEO metadata when provided
   it('should create a post with SEO metadata', () => {
     const post = Post.create({
       title: 'Hello',
       slug: 'hello',
       content: 'Content',
+      excerpt: 'Content',
       adminId,
       categoryId,
       metaTitle: 'SEO Title',
@@ -105,6 +77,7 @@ describe('Post', () => {
       title: 'Hello',
       slug: 'hello',
       content: 'Content',
+      excerpt: 'Content',
       adminId,
       categoryId,
       metaTitle: 'SEO Title',
@@ -183,6 +156,7 @@ describe('Post', () => {
       title: 'Hello',
       slug: 'hello',
       content: 'Content',
+      excerpt: 'Content',
       adminId,
       categoryId,
     }).publish();
@@ -200,6 +174,7 @@ describe('Post', () => {
       title: 'Hello',
       slug: 'hello',
       content: 'Content',
+      excerpt: 'Content',
       adminId,
       categoryId,
     });
@@ -216,6 +191,7 @@ describe('Post', () => {
       title: 'Hello',
       slug: 'hello',
       content: 'Content',
+      excerpt: 'Content',
       adminId,
       categoryId,
     });
@@ -242,6 +218,7 @@ describe('Post', () => {
       title: 'Hello',
       slug: 'hello',
       content: 'Content',
+      excerpt: 'Content',
       adminId,
       categoryId,
     });
@@ -255,6 +232,7 @@ describe('Post', () => {
       title: 'Hello',
       slug: 'hello',
       content: 'Content',
+      excerpt: 'Content',
       adminId,
       categoryId,
     });

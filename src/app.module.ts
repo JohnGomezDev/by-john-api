@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { APP_GUARD } from '@nestjs/core';
+import { EventEmitterModule } from '@nestjs/event-emitter';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
@@ -8,6 +9,7 @@ import { DatabaseModule } from './database/database.module';
 import { AdminModule } from './modules/admin/admin.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { BlogModule } from './modules/blog/blog.module';
+import { RagModule } from './modules/rag/rag.module';
 import { SongsModule } from './modules/songs/songs.module';
 
 @Module({
@@ -15,6 +17,7 @@ import { SongsModule } from './modules/songs/songs.module';
     ConfigModule.forRoot({
       isGlobal: true,
     }),
+    EventEmitterModule.forRoot({ wildcard: false }),
     ThrottlerModule.forRoot({
       errorMessage: 'Demasiadas solicitudes, intenta de nuevo más tarde',
       throttlers: [
@@ -27,6 +30,7 @@ import { SongsModule } from './modules/songs/songs.module';
     AdminModule,
     AuthModule,
     BlogModule,
+    RagModule,
     SongsModule,
   ],
   controllers: [AppController],

@@ -1,4 +1,6 @@
 allowBuilds:
   '@scarf/scarf': true
   bcrypt: true
+  protobufjs: true
+  sharp: true
   unrs-resolver: true

@@ -1,5 +1,9 @@
 import { ApiProperty } from '@nestjs/swagger';
-import type { TArtist, Song } from '../../../../domain/entities/song.entity';
+import type { Song } from '../../../../domain/entities/song.entity';
+import type {
+  IFavoriteSong,
+  TArtist,
+} from '../../../../application/use-cases/get-first-song/get-favorite-song.use-case';
 
 export class ArtistResponseDto {
   @ApiProperty({ description: 'ID del artista', example: '13' })
@@ -19,6 +23,33 @@ export class ArtistResponseDto {
     dto.id = artist.id;
     dto.name = artist.name;
     dto.url = artist.url;
+    return dto;
+  }
+}
+
+export class SavedSongResponseDto {
+  @ApiProperty({ description: 'ID interno del registro', example: 1 })
+  id: number;
+
+  @ApiProperty({ description: 'ID del track en Deezer', example: '3135556' })
+  trackId: string;
+
+  @ApiProperty({ description: 'Nombre del track', example: 'Lose Yourself' })
+  trackName: string;
+
+  @ApiProperty({ description: 'Fecha de creación del registro' })
+  createdAt: Date;
+
+  @ApiProperty({ description: 'Fecha de última actualización del registro' })
+  updatedAt: Date;
+
+  static fromDomain(song: Song): SavedSongResponseDto {
+    const dto = new SavedSongResponseDto();
+    dto.id = song.id!;
+    dto.trackId = song.trackId;
+    dto.trackName = song.trackName;
+    dto.createdAt = song.createdAt;
+    dto.updatedAt = song.updatedAt;
     return dto;
   }
 }
@@ -77,9 +108,9 @@ export class SongResponseDto {
   @ApiProperty({ description: 'Fecha de última actualización del registro' })
   updatedAt: Date;
 
-  static fromDomain(song: Song): SongResponseDto {
+  static fromFavorite(song: IFavoriteSong): SongResponseDto {
     const dto = new SongResponseDto();
-    dto.id = song.id!;
+    dto.id = song.id;
     dto.trackId = song.trackId;
     dto.trackName = song.trackName;
     dto.artists = song.artists.map((artist) =>

@@ -7,17 +7,19 @@ import {
   JoinTable,
   ManyToMany,
   ManyToOne,
+  OneToMany,
   PrimaryColumn,
   UpdateDateColumn,
 } from 'typeorm';
 import { AdminTypeOrmEntity } from '../../../../admin/infrastructure/persistence/typeorm/admin.typeorm-entity';
+import { PostChunkTypeOrmEntity } from '../../../../rag/infrastructure/persistence/typeorm/post-chunk.typeorm-entity';
 import { CategoryTypeOrmEntity } from './category.typeorm-entity';
 import { TagTypeOrmEntity } from './tag.typeorm-entity';
 
 @Entity('posts')
 @Index('idx_post_slug', ['slug'], { unique: true })
 @Index('idx_post_category', ['categoryId'])
-@Index('idx_post_search', ['searchVector'])
+@Index('idx_post_search', ['searchVector'], { type: 'gin' })
 export class PostTypeOrmEntity {
   @PrimaryColumn('uuid')
   id: string;
@@ -100,4 +102,7 @@ export class PostTypeOrmEntity {
     inverseJoinColumn: { name: 'tag_id', referencedColumnName: 'id' },
   })
   tags: TagTypeOrmEntity[];
+
+  @OneToMany(() => PostChunkTypeOrmEntity, (chunk) => chunk.post)
+  chunks: PostChunkTypeOrmEntity[];
 }

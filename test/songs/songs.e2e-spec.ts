@@ -100,6 +100,17 @@ describe('Songs (e2e)', () => {
   it('GET /api/songs/favorite should return the stored song', async () => {
     await deleteAllSongs(app);
     const song = await insertSong(app);
+    global.fetch = jest.fn().mockResolvedValue(
+      mockJsonResponse(200, {
+        id: song.trackId,
+        title: song.trackName,
+        link: MOCK_TRACK.link,
+        preview: MOCK_TRACK.preview,
+        duration: MOCK_TRACK.duration,
+        artist: MOCK_TRACK.artist,
+        album: MOCK_TRACK.album,
+      }),
+    ) as typeof fetch;
 
     const response = await http(app).get('/api/songs/favorite');
 
@@ -111,8 +122,6 @@ describe('Songs (e2e)', () => {
         id: song.id,
         trackId: song.trackId,
         trackName: song.trackName,
-        albumName: song.albumName,
-        durationMs: song.durationMs,
       }),
     });
   });
@@ -246,8 +255,6 @@ describe('Songs (e2e)', () => {
       data: containing({
         trackId: '3135556',
         trackName: MOCK_TRACK.title,
-        albumName: MOCK_TRACK.album.title,
-        durationMs: MOCK_TRACK.duration * 1000,
       }),
     });
 

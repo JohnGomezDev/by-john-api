@@ -4,7 +4,7 @@ import {
   InternalServerErrorException,
   NotFoundException,
 } from '@nestjs/common';
-import { Song, type TArtist } from '../../../domain/entities/song.entity';
+import { Song } from '../../../domain/entities/song.entity';
 import {
   SONG_REPOSITORY,
   type ISongRepository,
@@ -15,19 +15,6 @@ const DEEZER_TRACK_URL = 'https://api.deezer.com/track';
 interface IDeezerTrackApiResponse {
   id: number;
   title: string;
-  link: string;
-  preview: string | null;
-  duration: number;
-  artist: {
-    id: number;
-    name: string;
-    link: string;
-  };
-  album: {
-    id: number;
-    title: string;
-    cover: string;
-  };
 }
 
 @Injectable()
@@ -54,24 +41,9 @@ export class SaveSongUseCase {
 
     const data = (await response.json()) as IDeezerTrackApiResponse;
 
-    const artists: TArtist[] = [
-      {
-        id: String(data.artist.id),
-        name: data.artist.name,
-        url: data.artist.link,
-      },
-    ];
-
     const songData = {
       trackId: String(data.id),
       trackName: data.title,
-      artists,
-      albumId: String(data.album.id),
-      albumName: data.album.title,
-      albumCoverUrl: data.album.cover,
-      url: data.link,
-      previewUrl: data.preview,
-      durationMs: data.duration * 1000,
     };
 
     const existing = await this.songRepository.findFirst();

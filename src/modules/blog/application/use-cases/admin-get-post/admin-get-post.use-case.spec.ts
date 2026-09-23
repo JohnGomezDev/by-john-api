@@ -40,6 +40,7 @@ describe('AdminGetPostUseCase', () => {
       title: 'Hello',
       slug: 'hello',
       content: 'Content',
+      excerpt: 'Content',
       adminId,
       categoryId,
     });
@@ -66,6 +67,7 @@ describe('AdminGetPostUseCase', () => {
       title: 'Hello',
       slug: 'hello',
       content: 'Content',
+      excerpt: 'Content',
       adminId,
       categoryId,
     });

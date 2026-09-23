@@ -14,7 +14,6 @@ import {
   ADMIN_REFRESH_TOKEN_REPOSITORY,
   type IAdminRefreshTokenRepository,
 } from '../../../domain/repositories/admin-refresh-token.repository.interface';
-import { AUTH_MESSAGES } from '../../constants/auth-messages.constants';
 import {
   buildRawRefreshToken,
   parseRawRefreshToken,
@@ -44,7 +43,9 @@ export class RefreshTokenUseCase {
   ): Promise<IRefreshTokenResult> {
     const parsed = parseRawRefreshToken(rawCookieValue);
     if (!parsed) {
-      throw new UnauthorizedException(AUTH_MESSAGES.INVALID_SESSION);
+      throw new UnauthorizedException(
+        'Sesión inválida, por favor inicia sesión nuevamente',
+      );
     }
 
     // Atomic claim: only one concurrent refresh can delete+receive the row.
@@ -52,11 +53,15 @@ export class RefreshTokenUseCase {
       parsed.id,
     );
     if (!storedToken) {
-      throw new UnauthorizedException(AUTH_MESSAGES.EXPIRED_SESSION);
+      throw new UnauthorizedException(
+        'Sesión expirada, por favor inicia sesión nuevamente',
+      );
     }
 
     if (storedToken.isExpired) {
-      throw new UnauthorizedException(AUTH_MESSAGES.EXPIRED_SESSION);
+      throw new UnauthorizedException(
+        'Sesión expirada, por favor inicia sesión nuevamente',
+      );
     }
 
     const secretMatches = await this.hasher.compare(
@@ -65,12 +70,16 @@ export class RefreshTokenUseCase {
     );
     if (!secretMatches) {
       // Row already deleted by the atomic claim — theft/replay is revoked.
-      throw new UnauthorizedException(AUTH_MESSAGES.EXPIRED_SESSION);
+      throw new UnauthorizedException(
+        'Sesión expirada, por favor inicia sesión nuevamente',
+      );
     }
 
     const admin = await this.adminRepository.findById(storedToken.adminId);
     if (!admin) {
-      throw new UnauthorizedException(AUTH_MESSAGES.EXPIRED_SESSION);
+      throw new UnauthorizedException(
+        'Sesión expirada, por favor inicia sesión nuevamente',
+      );
     }
 
     const secret = randomBytes(32).toString('hex');
